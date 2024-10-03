@@ -3,4 +3,4 @@
 ## Installation
 https://go.dev/doc/install
 ## Execute
-```go run main.go
+go run main.go
