@@ -86,3 +86,36 @@ func (trie *Trie) ExtractWord(sentence string, offset int) string {
 
 	return sentence[:node.Height]
 }
+
+func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, int) {
+	var result string
+	skip := trie.getCacheSkip(sentence)
+
+	for {
+		result = trie.ExtractWord(sentence[skip:], offset)
+		if result != "" {
+			break
+		}
+
+		skip += 1
+		if skip >= len(sentence) {
+			break
+		}
+	}
+
+	if skip > 0 {
+		trie.setCacheSkip(sentence, skip)
+	}
+
+	return result, skip
+}
+
+var skipMap = make(map[string]int)
+
+func (trie *Trie) setCacheSkip(sentence string, skip int) {
+	skipMap[sentence] = skip
+}
+
+func (trie *Trie) getCacheSkip(sentence string) int {
+	return skipMap[sentence]
+}

@@ -4,20 +4,27 @@ import (
 	"address_classification/trie"
 	"address_classification/trie/parse"
 	"bufio"
+	"encoding/json"
 	"log"
 	"os"
 	"strings"
 )
 
+type TestCase struct {
+	Input  string `json:"text"`
+	Output Result `json:"result"`
+}
+
 type Result struct {
-	Street   string
-	Ward     string
-	District string
-	City     string
+	Ward     string `json:"ward"`
+	District string `json:"district"`
+	Province string `json:"province"`
 }
 
 func main() {
 	trieDic := importDictionary("./assets/example.txt")
+	//testCases := importTestCases("./assets/inputs.json")
+	//fmt.Println(testCases)
 
 	input := []string{
 		"nguyen tri phuong, phuong 10, quan 10, tp ho chi minh",
@@ -39,7 +46,7 @@ func main() {
 func classifyAddress(input string, trieDic *trie.Trie) Result {
 	result := Result{}
 
-	ok, words := parse.DynamicParse(input, trieDic)
+	ok, words := parse.DynamicParseWithSkip(input, trieDic)
 	if ok {
 		logWords(words)
 	}
@@ -73,9 +80,23 @@ func importDictionary(fileName string) *trie.Trie {
 		log.Fatal(err)
 	}
 
-	//trieDic.AddWord("Hà Nội")
-
 	return trieDic
+}
+
+func importTestCases(fileName string) []TestCase {
+	var testCases []TestCase
+
+	bytes, err := os.ReadFile(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := json.Unmarshal(bytes, &testCases); err != nil {
+		log.Fatal(err)
+	}
+
+	return testCases
+
 }
 
 func logWords(words []string) {
@@ -83,5 +104,4 @@ func logWords(words []string) {
 	for i, word := range words {
 		log.Println(i+1, word)
 	}
-
 }

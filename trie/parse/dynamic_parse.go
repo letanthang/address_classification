@@ -63,3 +63,54 @@ func DynamicParse(originSentence string, trieDic *trie.Trie) (bool, []string) {
 
 	return extract(first, end)
 }
+
+func DynamicParseWithSkip(originSentence string, trieDic *trie.Trie) (bool, []string) {
+	first := 0
+	end := len(originSentence) - 1
+
+	if trieDic == nil || end <= 0 {
+		return false, nil
+	}
+
+	var extract func(first, end int) (bool, []string)
+	extract = func(first, end int) (bool, []string) {
+		if first >= end {
+			return true, nil
+		}
+		offset := 0
+		// skip delimiters
+		for {
+			if !slices.Contains(delimiters, rune(originSentence[first])) {
+				break
+			}
+			first++
+		}
+
+		sentence := originSentence[first:]
+
+		for offset < len(sentence) {
+			word, skip := trieDic.ExtractWordWithSkipping(sentence, offset)
+			if word == "" {
+				return false, nil
+			}
+
+			offset = len(word) + skip
+			nextFirst := first + offset
+
+			if nextFirst == len(originSentence)-1 {
+				return true, []string{word}
+			}
+
+			ok, words := extract(nextFirst, end)
+
+			if ok {
+				words = append(words, word)
+				return true, words
+			}
+		}
+
+		return false, nil
+	}
+
+	return extract(first, end)
+}
