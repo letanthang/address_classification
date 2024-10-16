@@ -16,13 +16,13 @@ func main() {
 	//testCases := importTestCases("./assets/inputs.json")
 
 	input := []string{
-		//"nguyen tri phuong, phuong 10, quan 10, tp ho chi minh",
-		//"nguyen tri, phuong 10, quan 1, tp ho chi minh",
-		//"nguyen tri, phuong 100, quan 11, tp ho chi minh",
-		//"nguyen tri phuong 100 quan 111 tp ho chi minh",
-		//"quan 111 tp ho chi minh",
-		//"tp ho chí minh quận 2", // missing Q2 in db/trie
-		"Xa Quảng Thọ,T.P Sầm Swn,TY. thanh Hóa",
+		"nguyen tri phuong, phuong 10, quan 10, tp ho chi minh",
+		"nguyen tri, phuong 10, quan 1, tp ho chi minh",
+		"nguyen tri, phuong 100, quan 11, tp ho chi minh",
+		"nguyen tri phuong 100 quan 111 tp ho chi minh",
+		"quan 111 tp ho chi minh",
+		"tp ho chí minh quận 2", // missing Q2 in db/trie
+		"p Quảng Thọ,T.P Sầm Swn,TY. thanh Hóa",
 	}
 
 	//word := trieDic.ExtractWord(input[0], 17)

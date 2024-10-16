@@ -339,11 +339,14 @@ func FilterLocation(locations []entity.Location) []entity.Location {
 	result := []entity.Location{}
 	locationMap, wardIDs, districtIDs, provinceIDs := entity.Locations(locations).Simplify()
 
+	filterWardIDs := []string{}
+
 	if len(provinceIDs) > 0 {
 		for _, id := range wardIDs {
 			ward := WardMap[id]
 			if slices.Contains(provinceIDs, ward.ProvinceCode) {
 				result = append(result, locationMap[id])
+				filterWardIDs = append(filterWardIDs, id)
 			}
 		}
 
@@ -355,6 +358,21 @@ func FilterLocation(locations []entity.Location) []entity.Location {
 		}
 
 		result = append(result, locationMap[provinceIDs[0]])
+	}
+
+	if len(filterWardIDs) > 1 {
+		for _, id := range filterWardIDs {
+			ward := WardMap[id]
+			if locationMap[id].Name == locationMap[ward.ProvinceCode].Name {
+				// remove ward if it's the same name with province
+				for i, v := range result {
+					if v.ID == id {
+						result = append(result[:i], result[i+1:]...)
+						break
+					}
+				}
+			}
+		}
 	}
 
 	return result
