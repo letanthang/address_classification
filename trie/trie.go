@@ -58,47 +58,23 @@ func (trie *Trie) getCacheSkip(sentence string) int {
 	return skipMap[sentence]
 }
 
-func (trie *Trie) BuildTrie(words []string) {
-	for _, word := range words {
-		trie.AddWord(word)
-	}
-}
-
-func (trie *Trie) AddWord(word string) {
-	node := trie.Root
-
-	for _, char := range word {
-		//if char == ' ' {
-		//	node.IsEnd = true
-		//}
-
-		if _, ok := node.Children[char]; !ok {
-			node.Children[char] = &Node{Children: make(map[rune]*Node)}
-		}
-		height := node.Height
-		node = node.Children[char]
-		node.Value = string(char)
-		node.Height = height + 1
-	}
-	node.IsEnd = true
-}
-
 func (trie *Trie) AddWordWithTypeAndID(word string, nodeType NodeType, id string) {
 	node := trie.Root
 
 	for _, char := range word {
-		if _, ok := node.Children[char]; !ok {
+		child, ok := node.Children[char]
+		if !ok {
 			node.Children[char] = &Node{Children: make(map[rune]*Node)}
+			child = node.Children[char]
 		}
 		height := node.Height
-		node = node.Children[char]
-		node.Value = string(char)
-		node.Height = height + 1
+		child.Value = string(char)
+		child.Height = height + 1
+		node = child
 	}
 
 	node.Type = nodeType
 	node.IDs = append(node.IDs, id)
-
 	node.IsEnd = true
 }
 
@@ -107,6 +83,7 @@ var DistrictMap = make(map[string]entity.District)
 var ProvinceMap = make(map[string]entity.Province)
 
 func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
+	name := ""
 	for _, ward := range wards {
 		WardMap[ward.Code] = ward
 		DistrictMap[ward.DistrictCode] = entity.District{Name: ward.District, Code: ward.DistrictCode}
@@ -114,19 +91,92 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 
 		wardName := strings.ToLower(stringutil.RemoveVietnameseAccents(ward.Name))
 		trie.AddWordWithTypeAndID(wardName, NodeTypeWard, ward.Code)
+		if strings.HasPrefix(wardName, "xa ") {
+			name = strings.TrimPrefix(wardName, "xa ")
+			trie.AddWordWithTypeAndID(name, NodeTypeWard, ward.Code)
+
+			alias := []string{"x ", "x.", "x. "}
+			for _, a := range alias {
+				trie.AddWordWithTypeAndID(a+name, NodeTypeWard, ward.Code)
+			}
+		}
+
+		if strings.HasPrefix(wardName, "phuong ") {
+			name = strings.TrimPrefix(wardName, "phuong ")
+			trie.AddWordWithTypeAndID(name, NodeTypeWard, ward.Code)
+			alias := []string{"p ", "p.", "p. "}
+			for _, a := range alias {
+				trie.AddWordWithTypeAndID(a+name, NodeTypeWard, ward.Code)
+			}
+		}
+
+		if strings.HasPrefix(wardName, "thi tran ") {
+			name = strings.TrimPrefix(wardName, "thi tran ")
+			trie.AddWordWithTypeAndID(name, NodeTypeWard, ward.Code)
+			alias := []string{"tt ", "tt.", "tt. ", "t.t ", "t.t. "}
+			for _, a := range alias {
+				trie.AddWordWithTypeAndID(a+name, NodeTypeWard, ward.Code)
+			}
+		}
+
 	}
 
 	for _, district := range DistrictMap {
 		districtName := strings.ToLower(stringutil.RemoveVietnameseAccents(district.Name))
 		trie.AddWordWithTypeAndID(districtName, NodeTypeDistrict, district.Code)
+		if districtName == "huyen thanh hoa" {
+			continue
+		}
+
+		if strings.HasPrefix(districtName, "thi xa ") {
+			name = strings.TrimPrefix(districtName, "thi xa ")
+			trie.AddWordWithTypeAndID(name, NodeTypeDistrict, district.Code)
+			alias := []string{"tx ", "tx. ", "t.x ", "t.x. "}
+			for _, a := range alias {
+				trie.AddWordWithTypeAndID(a+name, NodeTypeDistrict, district.Code)
+			}
+		}
+
+		if strings.HasPrefix(districtName, "quan ") {
+			name = strings.TrimPrefix(districtName, "quan ")
+			trie.AddWordWithTypeAndID(name, NodeTypeDistrict, district.Code)
+			alias := []string{"q", "q ", "q.", "q. "}
+			for _, a := range alias {
+				trie.AddWordWithTypeAndID(a+name, NodeTypeDistrict, district.Code)
+			}
+		}
+
+		if strings.HasPrefix(districtName, "huyen ") {
+			name = strings.TrimPrefix(districtName, "huyen ")
+			trie.AddWordWithTypeAndID(name, NodeTypeDistrict, district.Code)
+			alias := []string{"h ", "h.", "h. "}
+			for _, a := range alias {
+				trie.AddWordWithTypeAndID(a+name, NodeTypeDistrict, district.Code)
+			}
+		}
 	}
 
 	for _, province := range ProvinceMap {
 		provinceName := strings.ToLower(stringutil.RemoveVietnameseAccents(province.Name))
 		trie.AddWordWithTypeAndID(provinceName, NodeTypeProvince, province.Code)
-		provinceName = strings.TrimPrefix(provinceName, "thanh pho ")
-		provinceName = strings.TrimPrefix(provinceName, "tinh ")
-		trie.AddWordWithTypeAndID(provinceName, NodeTypeProvince, province.Code)
+
+		if strings.HasPrefix(provinceName, "thanh pho ") {
+			name = strings.TrimPrefix(provinceName, "thanh pho ")
+			trie.AddWordWithTypeAndID(name, NodeTypeProvince, province.Code)
+			alias := []string{"tp", "tp ", "tp.", "tp. ", "t.", "t. ", "t.p", "t.p "}
+			for _, a := range alias {
+				trie.AddWordWithTypeAndID(a+name, NodeTypeProvince, province.Code)
+			}
+		}
+
+		if strings.HasPrefix(provinceName, "tinh ") {
+			name = strings.TrimPrefix(provinceName, "tinh ")
+			trie.AddWordWithTypeAndID(name, NodeTypeProvince, province.Code)
+			alias := []string{"t", "t.", "t. "}
+			for _, a := range alias {
+				trie.AddWordWithTypeAndID(a+name, NodeTypeProvince, province.Code)
+			}
+		}
 	}
 }
 
@@ -142,6 +192,23 @@ func (trie *Trie) Print() {
 	}
 	fmt.Println("------------Start print trie ----------")
 	dfs(trie.Root, "")
+	fmt.Println("------------End print trie ----------")
+}
+
+func (trie *Trie) PrintWithPrefix(prefix string) {
+	node := trie.searchPrefix(prefix)
+
+	var dfs func(node *Node, prefix string)
+	dfs = func(node *Node, prefix string) {
+		if node.IsEnd {
+			fmt.Printf("%s, %s %v\n", prefix, node.Type.ToString(), node.IDs) // Print the word when you reach the end of it
+		}
+		for char, child := range node.Children {
+			dfs(child, prefix+string(char)) // Recursively print child nodes
+		}
+	}
+	fmt.Println("------------Start print trie ----------")
+	dfs(node, prefix)
 	fmt.Println("------------End print trie ----------")
 }
 
