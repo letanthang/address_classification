@@ -14,14 +14,8 @@ import (
 )
 
 type TestCase struct {
-	Input  string `json:"text"`
-	Output Result `json:"result"`
-}
-
-type Result struct {
-	Ward     string `json:"ward"`
-	District string `json:"district"`
-	Province string `json:"province"`
+	Input  string        `json:"text"`
+	Output entity.Result `json:"result"`
 }
 
 func main() {
@@ -37,9 +31,11 @@ func main() {
 
 	input := []string{
 		"nguyen tri phuong, phuong 10, quan 10, tp ho chi minh",
-		//"nguyen tri phuong, phuong 10, quan 10, tp ho chi minh",
-		//"nguyen tri phuong, phuong 10, tp ho chi minh, quan 10",
-		//"nguyen tri phuong phuong 10 tp ho chi minh quan 10",
+		"nguyen tri, phuong 10, quan 1, tp ho chi minh",
+		"nguyen tri, phuong 100, quan 11, tp ho chi minh",
+		"nguyen tri phuong 100 quan 111 tp ho chi minh",
+		"quan 111 tp ho chi minh",
+		"tp ho chí minh quận 2",
 	}
 
 	//word := trieDic.ExtractWord(input[0], 17)
@@ -47,19 +43,13 @@ func main() {
 
 	for _, address := range input {
 		result := classifyAddress(normalizeInput(address), trieDic)
-		log.Println("final result", result)
+		logResult(result)
 	}
 
 }
 
-func classifyAddress(input string, trieDic *trie.Trie) Result {
-	result := Result{}
-
-	ok, words := parse.DynamicParseWithSkip(input, trieDic)
-	if ok {
-		logWords(words)
-	}
-
+func classifyAddress(input string, trieDic *trie.Trie) entity.Result {
+	result := parse.DynamicParseWithSkipV2(input, trieDic)
 	return result
 }
 
@@ -137,6 +127,10 @@ func logWords(words []string) {
 	for i, word := range words {
 		log.Println(i+1, word)
 	}
+}
+
+func logResult(result entity.Result) {
+	log.Printf("Province: %s, District: %s, Ward: %s\n", result.Province, result.District, result.Ward)
 }
 
 func importDictionary(fileName string) *trie.Trie {

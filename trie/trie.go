@@ -102,26 +102,26 @@ func (trie *Trie) AddWordWithTypeAndID(word string, nodeType NodeType, id string
 	node.IsEnd = true
 }
 
-var wardMap = make(map[string]entity.Ward)
-var districtMap = make(map[string]entity.District)
-var provinceMap = make(map[string]entity.Province)
+var WardMap = make(map[string]entity.Ward)
+var DistrictMap = make(map[string]entity.District)
+var ProvinceMap = make(map[string]entity.Province)
 
 func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 	for _, ward := range wards {
-		wardMap[ward.Code] = ward
-		districtMap[ward.DistrictCode] = entity.District{Name: ward.District, Code: ward.DistrictCode}
-		provinceMap[ward.ProvinceCode] = entity.Province{Name: ward.Province, Code: ward.ProvinceCode}
+		WardMap[ward.Code] = ward
+		DistrictMap[ward.DistrictCode] = entity.District{Name: ward.District, Code: ward.DistrictCode}
+		ProvinceMap[ward.ProvinceCode] = entity.Province{Name: ward.Province, Code: ward.ProvinceCode}
 
 		wardName := strings.ToLower(stringutil.RemoveVietnameseAccents(ward.Name))
 		trie.AddWordWithTypeAndID(wardName, NodeTypeWard, ward.Code)
 	}
 
-	for _, district := range districtMap {
+	for _, district := range DistrictMap {
 		districtName := strings.ToLower(stringutil.RemoveVietnameseAccents(district.Name))
 		trie.AddWordWithTypeAndID(districtName, NodeTypeDistrict, district.Code)
 	}
 
-	for _, province := range provinceMap {
+	for _, province := range ProvinceMap {
 		provinceName := strings.ToLower(stringutil.RemoveVietnameseAccents(province.Name))
 		trie.AddWordWithTypeAndID(provinceName, NodeTypeProvince, province.Code)
 		provinceName = strings.TrimPrefix(provinceName, "thanh pho ")
@@ -157,31 +157,45 @@ func (trie *Trie) IsEnd(word string) bool {
 	return node.IsEnd
 }
 
-func (trie *Trie) ExtractWord(sentence string, offset int) string {
+func (trie *Trie) ExtractWord(sentence string, offset int) (string, *Node) {
 	node := trie.Root
+	breakFlag := false
+
 	for i, char := range sentence {
 		if i > offset && node.IsEnd {
-			break
+			breakFlag = true
 		}
+
 		child, ok := node.Children[char]
 		if !ok {
-			return ""
+			if breakFlag {
+				break
+			}
+
+			return "", nil
+		} else {
+			if breakFlag && !child.IsEnd {
+				break
+			}
 		}
 		node = child
 	}
 	if !node.IsEnd {
-		return ""
+		return "", nil
 	}
 
-	return sentence[:node.Height]
+	return sentence[:node.Height], node
 }
 
-func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, int) {
-	var result string
+func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, *Node, int) {
+	var (
+		result string
+		node   *Node
+	)
 	skip := trie.getCacheSkip(sentence)
 
 	for {
-		result = trie.ExtractWord(sentence[skip:], offset)
+		result, node = trie.ExtractWord(sentence[skip:], offset)
 		if result != "" {
 			break
 		}
@@ -196,7 +210,7 @@ func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, 
 		trie.setCacheSkip(sentence, skip)
 	}
 
-	return result, skip
+	return result, node, skip
 }
 
 // FindWordsWithPrefix tìm tất cả các từ bắt đầu bằng prefix
