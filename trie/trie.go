@@ -5,6 +5,7 @@ import (
 	"address_classification/pkg/stringutil"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 )
 
@@ -12,36 +13,13 @@ type Trie struct {
 	Root *Node
 }
 
-type NodeType int
-
-const (
-	NodeTypeOther    NodeType = 0
-	NodeTypeWard     NodeType = 1
-	NodeTypeDistrict NodeType = 2
-	NodeTypeProvince NodeType = 3
-)
-
-func (nt NodeType) ToString() string {
-	switch nt {
-	case NodeTypeWard:
-		return "Ward"
-	case NodeTypeDistrict:
-		return "District"
-	case NodeTypeProvince:
-		return "Province"
-	default:
-		return "Other"
-	}
-}
-
 type Node struct {
-	Weight   int
-	Height   int
-	Value    string
-	IsEnd    bool
-	Type     NodeType
-	IDs      []string
-	Children map[rune]*Node
+	Weight    int
+	Height    int
+	Value     string
+	IsEnd     bool
+	Locations []entity.Location
+	Children  map[rune]*Node
 }
 
 var skipMap = make(map[string]int)
@@ -58,7 +36,7 @@ func (trie *Trie) getCacheSkip(sentence string) int {
 	return skipMap[sentence]
 }
 
-func (trie *Trie) AddWordWithTypeAndID(word string, nodeType NodeType, id string) {
+func (trie *Trie) AddWordWithTypeAndID(word string, locationType entity.LocationType, id string) {
 	node := trie.Root
 
 	for _, char := range word {
@@ -73,8 +51,8 @@ func (trie *Trie) AddWordWithTypeAndID(word string, nodeType NodeType, id string
 		node = child
 	}
 
-	node.Type = nodeType
-	node.IDs = append(node.IDs, id)
+	location := entity.Location{LocationType: locationType, ID: id, Name: word}
+	node.Locations = append(node.Locations, location)
 	node.IsEnd = true
 }
 
@@ -86,36 +64,39 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 	name := ""
 	for _, ward := range wards {
 		WardMap[ward.Code] = ward
-		DistrictMap[ward.DistrictCode] = entity.District{Name: ward.District, Code: ward.DistrictCode}
+		DistrictMap[ward.DistrictCode] = entity.District{Name: ward.District, Code: ward.DistrictCode, ProvinceCode: ward.ProvinceCode}
 		ProvinceMap[ward.ProvinceCode] = entity.Province{Name: ward.Province, Code: ward.ProvinceCode}
 
 		wardName := strings.ToLower(stringutil.RemoveVietnameseAccents(ward.Name))
-		trie.AddWordWithTypeAndID(wardName, NodeTypeWard, ward.Code)
+		trie.AddWordWithTypeAndID(wardName, entity.LocationTypeWard, ward.Code)
 		if strings.HasPrefix(wardName, "xa ") {
 			name = strings.TrimPrefix(wardName, "xa ")
-			trie.AddWordWithTypeAndID(name, NodeTypeWard, ward.Code)
+			// exclude thanh because it's to ambiguous
+			if name != "thanh" {
+				trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code)
+			}
 
 			alias := []string{"x ", "x.", "x. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, NodeTypeWard, ward.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeWard, ward.Code)
 			}
 		}
 
 		if strings.HasPrefix(wardName, "phuong ") {
 			name = strings.TrimPrefix(wardName, "phuong ")
-			trie.AddWordWithTypeAndID(name, NodeTypeWard, ward.Code)
+			trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code)
 			alias := []string{"p ", "p.", "p. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, NodeTypeWard, ward.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeWard, ward.Code)
 			}
 		}
 
 		if strings.HasPrefix(wardName, "thi tran ") {
 			name = strings.TrimPrefix(wardName, "thi tran ")
-			trie.AddWordWithTypeAndID(name, NodeTypeWard, ward.Code)
+			trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code)
 			alias := []string{"tt ", "tt.", "tt. ", "t.t ", "t.t. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, NodeTypeWard, ward.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeWard, ward.Code)
 			}
 		}
 
@@ -123,58 +104,58 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 
 	for _, district := range DistrictMap {
 		districtName := strings.ToLower(stringutil.RemoveVietnameseAccents(district.Name))
-		trie.AddWordWithTypeAndID(districtName, NodeTypeDistrict, district.Code)
+		trie.AddWordWithTypeAndID(districtName, entity.LocationTypeDistrict, district.Code)
 		if districtName == "huyen thanh hoa" {
 			continue
 		}
 
 		if strings.HasPrefix(districtName, "thi xa ") {
 			name = strings.TrimPrefix(districtName, "thi xa ")
-			trie.AddWordWithTypeAndID(name, NodeTypeDistrict, district.Code)
+			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code)
 			alias := []string{"tx ", "tx. ", "t.x ", "t.x. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, NodeTypeDistrict, district.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code)
 			}
 		}
 
 		if strings.HasPrefix(districtName, "quan ") {
 			name = strings.TrimPrefix(districtName, "quan ")
-			trie.AddWordWithTypeAndID(name, NodeTypeDistrict, district.Code)
+			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code)
 			alias := []string{"q", "q ", "q.", "q. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, NodeTypeDistrict, district.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code)
 			}
 		}
 
 		if strings.HasPrefix(districtName, "huyen ") {
 			name = strings.TrimPrefix(districtName, "huyen ")
-			trie.AddWordWithTypeAndID(name, NodeTypeDistrict, district.Code)
+			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code)
 			alias := []string{"h ", "h.", "h. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, NodeTypeDistrict, district.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code)
 			}
 		}
 	}
 
 	for _, province := range ProvinceMap {
 		provinceName := strings.ToLower(stringutil.RemoveVietnameseAccents(province.Name))
-		trie.AddWordWithTypeAndID(provinceName, NodeTypeProvince, province.Code)
+		trie.AddWordWithTypeAndID(provinceName, entity.LocationTypeProvince, province.Code)
 
 		if strings.HasPrefix(provinceName, "thanh pho ") {
 			name = strings.TrimPrefix(provinceName, "thanh pho ")
-			trie.AddWordWithTypeAndID(name, NodeTypeProvince, province.Code)
+			trie.AddWordWithTypeAndID(name, entity.LocationTypeProvince, province.Code)
 			alias := []string{"tp", "tp ", "tp.", "tp. ", "t.", "t. ", "t.p", "t.p "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, NodeTypeProvince, province.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeProvince, province.Code)
 			}
 		}
 
 		if strings.HasPrefix(provinceName, "tinh ") {
 			name = strings.TrimPrefix(provinceName, "tinh ")
-			trie.AddWordWithTypeAndID(name, NodeTypeProvince, province.Code)
+			trie.AddWordWithTypeAndID(name, entity.LocationTypeProvince, province.Code)
 			alias := []string{"t", "t.", "t. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, NodeTypeProvince, province.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeProvince, province.Code)
 			}
 		}
 	}
@@ -184,7 +165,8 @@ func (trie *Trie) Print() {
 	var dfs func(node *Node, prefix string)
 	dfs = func(node *Node, prefix string) {
 		if node.IsEnd {
-			fmt.Printf("%s, %s %v\n", prefix, node.Type.ToString(), node.IDs) // Print the word when you reach the end of it
+
+			fmt.Printf("%s, %s\n", prefix, entity.Locations(node.Locations).ToString()) // Print the word when you reach the end of it
 		}
 		for char, child := range node.Children {
 			dfs(child, prefix+string(char)) // Recursively print child nodes
@@ -201,7 +183,7 @@ func (trie *Trie) PrintWithPrefix(prefix string) {
 	var dfs func(node *Node, prefix string)
 	dfs = func(node *Node, prefix string) {
 		if node.IsEnd {
-			fmt.Printf("%s, %s %v\n", prefix, node.Type.ToString(), node.IDs) // Print the word when you reach the end of it
+			fmt.Printf("%s, %s \n", prefix, entity.Locations(node.Locations).ToString()) // Print the word when you reach the end of it
 		}
 		for char, child := range node.Children {
 			dfs(child, prefix+string(char)) // Recursively print child nodes
@@ -293,12 +275,15 @@ func (trie *Trie) FindWordsWithPrefix(prefix string) []string {
 // searchPrefix tìm node chứa tiền tố
 func (trie *Trie) searchPrefix(prefix string) *Node {
 	node := trie.Root
+
 	for _, char := range prefix {
 		if _, ok := node.Children[char]; !ok {
 			return nil
 		}
+
 		node = node.Children[char]
 	}
+
 	return node
 }
 
@@ -348,4 +333,29 @@ func AutoCorrect(trie *Trie, inputWord string, maxDistance int) []string {
 		}
 	}
 	return suggestions
+}
+
+func FilterLocation(locations []entity.Location) []entity.Location {
+	result := []entity.Location{}
+	locationMap, wardIDs, districtIDs, provinceIDs := entity.Locations(locations).Simplify()
+
+	if len(provinceIDs) > 0 {
+		for _, id := range wardIDs {
+			ward := WardMap[id]
+			if slices.Contains(provinceIDs, ward.ProvinceCode) {
+				result = append(result, locationMap[id])
+			}
+		}
+
+		for _, id := range districtIDs {
+			district := DistrictMap[id]
+			if slices.Contains(provinceIDs, district.ProvinceCode) {
+				result = append(result, locationMap[id])
+			}
+		}
+
+		result = append(result, locationMap[provinceIDs[0]])
+	}
+
+	return result
 }

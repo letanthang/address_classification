@@ -3,7 +3,9 @@ package parse
 import (
 	"address_classification/entity"
 	"address_classification/trie"
+	"fmt"
 	"slices"
+	"strings"
 )
 
 var delimiters = []rune{' ', ',', '-'}
@@ -122,6 +124,7 @@ func DynamicParseWithSkip(originSentence string, trieDic *trie.Trie) (bool, []st
 
 func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Result {
 	result := entity.Result{}
+	locations := []entity.Location{}
 	first := 0
 	end := len(originSentence) - 1
 
@@ -151,8 +154,6 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Re
 				return false, nil
 			}
 
-			AddNodeToResult(&result, node)
-
 			offset = len(word) + skip
 			nextFirst := first + offset
 
@@ -163,6 +164,7 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Re
 			ok, words := extract(nextFirst, end)
 
 			if ok {
+				locations = append(locations, node.Locations...)
 				words = append(words, word)
 				return true, words
 			}
@@ -171,23 +173,26 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Re
 		return false, nil
 	}
 
-	extract(first, end)
+	_, words := extract(first, end)
+	printWords(words)
+	locations = trie.FilterLocation(locations)
+	fmt.Println(entity.Locations(locations).ToString())
 
 	return result
 }
 
-func AddNodeToResult(r *entity.Result, node *trie.Node) {
-
-	if node == nil || !node.IsEnd || r.IsComplete() {
-		return
+func AddLocationToResult(r *entity.Result, location entity.Location) {
+	switch location.LocationType {
+	case entity.LocationTypeWard:
+		r.Ward = trie.WardMap[location.ID].Name
+	case entity.LocationTypeDistrict:
+		r.District = trie.DistrictMap[location.ID].Name
+	case entity.LocationTypeProvince:
+		r.Province = trie.ProvinceMap[location.ID].Name
 	}
+}
 
-	switch node.Type {
-	case trie.NodeTypeWard:
-		r.Ward = trie.WardMap[node.IDs[0]].Name
-	case trie.NodeTypeDistrict:
-		r.District = trie.DistrictMap[node.IDs[0]].Name
-	case trie.NodeTypeProvince:
-		r.Province = trie.ProvinceMap[node.IDs[0]].Name
-	}
+func printWords(words []string) {
+	text := strings.Join(words, "|")
+	fmt.Println("Words: " + text)
 }

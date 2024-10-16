@@ -12,6 +12,7 @@ func main() {
 	trieDic := trie.NewTrie()
 	trieDic.BuildTrieWithWards(wards)
 
+	trieDic.PrintWithPrefix("thanh")
 	//testCases := importTestCases("./assets/inputs.json")
 
 	input := []string{
@@ -33,5 +34,5 @@ func main() {
 }
 
 func logResult(result entity.Result) {
-	log.Printf("Province: %s, District: %s, Ward: %s\n", result.Province, result.District, result.Ward)
+	log.Printf("Result : Province %s, District %s, Ward %s\n", result.Province, result.District, result.Ward)
 }
