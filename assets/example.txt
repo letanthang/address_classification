@@ -24,6 +24,3 @@ p 12
 F. 10
 F. 11
 F. 12
-nguyen
-nguyen tri phuong
-duong nguyen tri phuong
