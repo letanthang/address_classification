@@ -94,3 +94,12 @@ func (ls Locations) Simplify() (map[string]Location, []string, []string, []strin
 
 	return locationMap, wardIDs, districtIDs, provinceIDs
 }
+
+// Hàm Len trả về độ dài của slice
+func (ls Locations) Len() int { return len(ls) }
+
+// Hàm Less xác định thứ tự sắp xếp (ở đây là theo tuổi tăng dần)
+func (ls Locations) Less(i, j int) bool { return len(ls[i].Name) > len(ls[j].Name) }
+
+// Hàm Swap hoán đổi hai phần tử trong slice
+func (ls Locations) Swap(i, j int) { ls[i], ls[j] = ls[j], ls[i] }

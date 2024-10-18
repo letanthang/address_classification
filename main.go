@@ -16,8 +16,14 @@ func main() {
 	//trieDic.PrintWithPrefix("thanh")
 	//testCases := importTestCases("./assets/inputs.json")
 	ok := trieDic.IsEnd("hochiminh")
-	trieDic.PrintWithPrefix("tp ho chi")
 	fmt.Println(ok)
+	ok = trieDic.IsEnd("tp hochiminh")
+	fmt.Println(ok)
+	ok = trieDic.IsEnd("ho chi minh")
+	fmt.Println(ok)
+	ok = trieDic.IsEnd("tp ho chi minh")
+	fmt.Println(ok)
+	trieDic.PrintWithPrefix("tp ho chi")
 
 	input := []string{
 		"357/28,Ng-T- Thuật,P1,Q3,TP.HồChíMinh.",

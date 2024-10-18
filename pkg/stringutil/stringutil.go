@@ -1,6 +1,9 @@
 package stringutil
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // Function để loại bỏ dấu tiếng Việt
 func RemoveVietnameseAccents(input string) string {
@@ -69,4 +72,9 @@ func RemoveProvincePrefix(name string) string {
 	}
 
 	return result
+}
+
+func IsInteger(str string) bool {
+	_, err := strconv.Atoi(str)
+	return err == nil
 }

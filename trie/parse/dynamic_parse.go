@@ -51,6 +51,7 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Re
 			if word == "" {
 				return false, nil
 			}
+			locations = append(locations, node.Locations...)
 
 			offset = len(word) + skip
 			nextFirst := first + offset
@@ -62,7 +63,6 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Re
 			ok, words := extract(nextFirst, end)
 
 			if ok {
-				locations = append(locations, node.Locations...)
 				words = append(words, word)
 				return true, words
 			}
