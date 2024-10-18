@@ -34,3 +34,39 @@ var vietnameseTones = map[rune]rune{
 	'Ú': 'U', 'Ù': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ụ': 'U', 'Ư': 'U', 'Ứ': 'U', 'Ừ': 'U', 'Ử': 'U', 'Ữ': 'U', 'Ự': 'U',
 	'Ý': 'Y', 'Ỳ': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y', 'Ỵ': 'Y', 'đ': 'd', 'Đ': 'D',
 }
+
+func RemoveWardPrefix(name string) string {
+	result := name
+	prefixes := []string{"Phường ", "Xã ", "Thị trấn "}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(name, prefix) {
+			result = strings.TrimPrefix(name, prefix)
+		}
+	}
+
+	return result
+}
+
+func RemoveDistrictPrefix(name string) string {
+	result := name
+	prefixes := []string{"Quận ", "Huyện ", "Thị xã ", "Thành phố "}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(name, prefix) {
+			result = strings.TrimPrefix(name, prefix)
+		}
+	}
+
+	return result
+}
+
+func RemoveProvincePrefix(name string) string {
+	result := name
+	prefixes := []string{"Tỉnh ", "Thành phố "}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(name, prefix) {
+			result = strings.TrimPrefix(name, prefix)
+		}
+	}
+
+	return result
+}

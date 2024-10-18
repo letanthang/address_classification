@@ -63,9 +63,15 @@ var ProvinceMap = make(map[string]entity.Province)
 func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 	name := ""
 	for _, ward := range wards {
+		// remove prefix for ward, district, and province
+		noPrefixWardName := stringutil.RemoveWardPrefix(ward.Name)
+		noPrefixDistrictName := stringutil.RemoveDistrictPrefix(ward.District)
+		noPrefixProvinceName := stringutil.RemoveProvincePrefix(ward.Province)
+
+		ward.NoPrefixName = noPrefixWardName
 		WardMap[ward.Code] = ward
-		DistrictMap[ward.DistrictCode] = entity.District{Name: ward.District, Code: ward.DistrictCode, ProvinceCode: ward.ProvinceCode}
-		ProvinceMap[ward.ProvinceCode] = entity.Province{Name: ward.Province, Code: ward.ProvinceCode}
+		DistrictMap[ward.DistrictCode] = entity.District{Name: ward.District, NoPrefixName: noPrefixDistrictName, Code: ward.DistrictCode, ProvinceCode: ward.ProvinceCode}
+		ProvinceMap[ward.ProvinceCode] = entity.Province{Name: ward.Province, NoPrefixName: noPrefixProvinceName, Code: ward.ProvinceCode}
 
 		wardName := strings.ToLower(stringutil.RemoveVietnameseAccents(ward.Name))
 		trie.AddWordWithTypeAndID(wardName, entity.LocationTypeWard, ward.Code)
@@ -139,24 +145,41 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 
 	for _, province := range ProvinceMap {
 		provinceName := strings.ToLower(stringutil.RemoveVietnameseAccents(province.Name))
-		trie.AddWordWithTypeAndID(provinceName, entity.LocationTypeProvince, province.Code)
-
-		if strings.HasPrefix(provinceName, "thanh pho ") {
-			name = strings.TrimPrefix(provinceName, "thanh pho ")
-			trie.AddWordWithTypeAndID(name, entity.LocationTypeProvince, province.Code)
-			alias := []string{"tp", "tp ", "tp.", "tp. ", "t.", "t. ", "t.p", "t.p "}
-			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeProvince, province.Code)
-			}
+		provinceNames := trie.getProvinceAlias(provinceName)
+		for _, provinceName := range provinceNames {
+			trie.addProvinceWithPrefixAlias(provinceName, province.Code)
 		}
+	}
+}
 
-		if strings.HasPrefix(provinceName, "tinh ") {
-			name = strings.TrimPrefix(provinceName, "tinh ")
-			trie.AddWordWithTypeAndID(name, entity.LocationTypeProvince, province.Code)
-			alias := []string{"t", "t.", "t. "}
-			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeProvince, province.Code)
-			}
+func (trie *Trie) getProvinceAlias(provinceName string) []string {
+	provinceName = stringutil.RemoveProvincePrefix(provinceName)
+	if provinceName == "ho chi minh" {
+		fmt.Println("")
+	}
+	alias := strings.ReplaceAll(provinceName, " ", "")
+	return []string{provinceName, alias}
+}
+
+func (trie *Trie) addProvinceWithPrefixAlias(provinceName, provinceCode string) {
+	trie.AddWordWithTypeAndID(provinceName, entity.LocationTypeProvince, provinceCode)
+	var name string
+
+	if strings.HasPrefix(provinceName, "thanh pho ") {
+		name = strings.TrimPrefix(provinceName, "thanh pho ")
+		trie.AddWordWithTypeAndID(name, entity.LocationTypeProvince, provinceCode)
+		alias := []string{"tp", "tp ", "tp.", "tp. ", "t.", "t. ", "t.p", "t.p "}
+		for _, a := range alias {
+			trie.AddWordWithTypeAndID(a+name, entity.LocationTypeProvince, provinceCode)
+		}
+	}
+
+	if strings.HasPrefix(provinceName, "tinh ") {
+		name = strings.TrimPrefix(provinceName, "tinh ")
+		trie.AddWordWithTypeAndID(name, entity.LocationTypeProvince, provinceCode)
+		alias := []string{"t", "t.", "t. "}
+		for _, a := range alias {
+			trie.AddWordWithTypeAndID(a+name, entity.LocationTypeProvince, provinceCode)
 		}
 	}
 }
@@ -242,6 +265,10 @@ func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, 
 		node   *Node
 	)
 	skip := trie.getCacheSkip(sentence)
+
+	if skip > len(sentence) {
+		return "", nil, 0
+	}
 
 	for {
 		result, node = trie.ExtractWord(sentence[skip:], offset)
@@ -342,18 +369,31 @@ func FilterLocation(locations []entity.Location) []entity.Location {
 	filterWardIDs := []string{}
 
 	if len(provinceIDs) > 0 {
-		for _, id := range wardIDs {
-			ward := WardMap[id]
-			if slices.Contains(provinceIDs, ward.ProvinceCode) {
-				result = append(result, locationMap[id])
-				filterWardIDs = append(filterWardIDs, id)
+
+		if len(wardIDs) == 1 {
+			result = append(result, locationMap[wardIDs[0]])
+		} else if len(wardIDs) > 0 { // if we have more than 1 ward, filter them
+			for _, id := range wardIDs {
+				ward := WardMap[id]
+				if slices.Contains(provinceIDs, ward.ProvinceCode) {
+					result = append(result, locationMap[id])
+					filterWardIDs = append(filterWardIDs, id)
+				}
+
+				if len(filterWardIDs) == 0 {
+					result = append(result, locationMap[wardIDs[0]])
+				}
 			}
 		}
 
-		for _, id := range districtIDs {
-			district := DistrictMap[id]
-			if slices.Contains(provinceIDs, district.ProvinceCode) {
-				result = append(result, locationMap[id])
+		if len(districtIDs) == 1 {
+			result = append(result, locationMap[districtIDs[0]])
+		} else { // if we have more than 1 district, filter them
+			for _, id := range districtIDs {
+				district := DistrictMap[id]
+				if slices.Contains(provinceIDs, district.ProvinceCode) {
+					result = append(result, locationMap[id])
+				}
 			}
 		}
 

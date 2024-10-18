@@ -4,6 +4,7 @@ import (
 	"address_classification/entity"
 	"address_classification/pkg/triehelper"
 	"address_classification/trie"
+	"fmt"
 	"log"
 )
 
@@ -12,17 +13,21 @@ func main() {
 	trieDic := trie.NewTrie()
 	trieDic.BuildTrieWithWards(wards)
 
-	trieDic.PrintWithPrefix("thanh")
+	//trieDic.PrintWithPrefix("thanh")
 	//testCases := importTestCases("./assets/inputs.json")
+	ok := trieDic.IsEnd("hochiminh")
+	trieDic.PrintWithPrefix("tp ho chi")
+	fmt.Println(ok)
 
 	input := []string{
-		"nguyen tri phuong, phuong 10, quan 10, tp ho chi minh",
-		"nguyen tri, phuong 10, quan 1, tp ho chi minh",
-		"nguyen tri, phuong 100, quan 11, tp ho chi minh",
-		"nguyen tri phuong 100 quan 111 tp ho chi minh",
-		"quan 111 tp ho chi minh",
-		"tp ho chí minh quận 2", // missing Q2 in db/trie
-		"p Quảng Thọ,T.P Sầm Swn,TY. thanh Hóa",
+		"357/28,Ng-T- Thuật,P1,Q3,TP.HồChíMinh.",
+		//"nguyen tri phuong, phuong 10, quan 10, tp ho chi minh",
+		//"nguyen tri, phuong 10, quan 1, tp ho chi minh",
+		//"nguyen tri, phuong 100, quan 11, tp ho chi minh",
+		//"nguyen tri phuong 100 quan 111 tp ho chi minh",
+		//"quan 111 tp ho chi minh",
+		//"tp ho chí minh quận 2", // missing Q2 in db/trie
+		//"p Quảng Thọ,T.P Sầm Swn,TY. thanh Hóa",
 	}
 
 	//word := trieDic.ExtractWord(input[0], 17)

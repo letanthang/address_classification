@@ -6,6 +6,7 @@ import (
 
 type Ward struct {
 	Name         string
+	NoPrefixName string
 	Code         string
 	Province     string
 	ProvinceCode string
@@ -15,12 +16,14 @@ type Ward struct {
 }
 
 type Province struct {
-	Name string
-	Code string
+	Name         string
+	NoPrefixName string
+	Code         string
 }
 
 type District struct {
 	Name         string
+	NoPrefixName string
 	Code         string
 	ProvinceCode string
 }

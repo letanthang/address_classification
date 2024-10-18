@@ -8,12 +8,12 @@ import (
 
 func TestTrie_ExtractWord(t *testing.T) {
 	trie := NewTrie()
-	trie.AddWordWithTypeAndID("nguyen", NodeTypeOther, "1")
-	trie.AddWordWithTypeAndID("nguyen tri phuong", NodeTypeOther, "2")
-	trie.AddWordWithTypeAndID("tp ho chi minh", NodeTypeProvince, "3")
-	trie.AddWordWithTypeAndID("phuong 11", NodeTypeProvince, "3")
-	trie.AddWordWithTypeAndID("p. quang tho", NodeTypeWard, "4")
-	trie.AddWordWithTypeAndID("p quang tho", NodeTypeWard, "4")
+	trie.AddWordWithTypeAndID("nguyen", entity.LocationTypeOther, "1")
+	trie.AddWordWithTypeAndID("nguyen tri phuong", entity.LocationTypeOther, "2")
+	trie.AddWordWithTypeAndID("tp ho chi minh", entity.LocationTypeProvince, "3")
+	trie.AddWordWithTypeAndID("phuong 11", entity.LocationTypeProvince, "3")
+	trie.AddWordWithTypeAndID("p. quang tho", entity.LocationTypeWard, "4")
+	trie.AddWordWithTypeAndID("p quang tho", entity.LocationTypeWard, "4")
 
 	type args struct {
 		name     string
@@ -88,11 +88,11 @@ func TestTrie_ExtractWord(t *testing.T) {
 
 func TestTrie_ExtractWord_WithBuildTrie(t *testing.T) {
 	trie := NewTrie()
-	trie.AddWordWithTypeAndID("nguyen", NodeTypeOther, "1")
-	trie.AddWordWithTypeAndID("nguyen tri phuong", NodeTypeOther, "2")
-	trie.AddWordWithTypeAndID("tp ho chi minh", NodeTypeProvince, "3")
-	trie.AddWordWithTypeAndID("phuong 11", NodeTypeProvince, "3")
-	trie.AddWordWithTypeAndID("p. quang tho", NodeTypeWard, "4")
+	trie.AddWordWithTypeAndID("nguyen", entity.LocationTypeOther, "1")
+	trie.AddWordWithTypeAndID("nguyen tri phuong", entity.LocationTypeOther, "2")
+	trie.AddWordWithTypeAndID("tp ho chi minh", entity.LocationTypeProvince, "3")
+	trie.AddWordWithTypeAndID("phuong 11", entity.LocationTypeProvince, "3")
+	trie.AddWordWithTypeAndID("p. quang tho", entity.LocationTypeWard, "4")
 
 	type args struct {
 		name     string
