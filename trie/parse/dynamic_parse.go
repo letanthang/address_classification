@@ -71,9 +71,9 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Re
 		return false, nil
 	}
 
-	extract(first, end)
-	//printWords(words)
-	locations = trie.FilterLocation(locations)
+	_, words := extract(first, end)
+	printWords(words)
+	locations = trie.FilterLocation(locations, words)
 	//fmt.Println(entity.Locations(locations).ToString())
 
 	result = GetLocationFromLocations(locations)

@@ -14,19 +14,14 @@ func main() {
 	trieDic.BuildTrieWithWards(wards)
 
 	//trieDic.PrintWithPrefix("thanh")
-	//testCases := importTestCases("./assets/inputs.json")
-	ok := trieDic.IsEnd("hochiminh")
+	ok := trieDic.IsEnd("chiem hoa")
 	fmt.Println(ok)
-	ok = trieDic.IsEnd("tp hochiminh")
-	fmt.Println(ok)
-	ok = trieDic.IsEnd("ho chi minh")
-	fmt.Println(ok)
-	ok = trieDic.IsEnd("tp ho chi minh")
-	fmt.Println(ok)
-	trieDic.PrintWithPrefix("tp ho chi")
 
 	input := []string{
-		"357/28,Ng-T- Thuật,P1,Q3,TP.HồChíMinh.",
+		//"284DBis Ng Văn Giáo, P3, Mỹ Tho, T.Giang.",
+		//"Nà Làng Phú Bình, Chiêm Hoá, Chiêm Hoá, Tuyên Quang",
+		//"59/12 Ng-B-Khiêm, Đa Kao Quận 1, TP. Hồ Chí Minh",
+		"46/8F Trung Chánh 2 Trung Chánh, Hóc Môn, TP. Hồ Chí Minh",
 		//"nguyen tri phuong, phuong 10, quan 10, tp ho chi minh",
 		//"nguyen tri, phuong 10, quan 1, tp ho chi minh",
 		//"nguyen tri, phuong 100, quan 11, tp ho chi minh",

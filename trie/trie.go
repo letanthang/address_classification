@@ -91,7 +91,7 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 
 		if strings.HasPrefix(wardName, "phuong ") {
 			name = strings.TrimPrefix(wardName, "phuong ")
-			if !stringutil.IsInteger(name) {
+			if !stringutil.IsInteger(name) && len(name) > 3 {
 				trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code)
 			}
 			alias := []string{"p", "p ", "p.", "p. "}
@@ -124,6 +124,16 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 			name = strings.TrimPrefix(districtName, "thi xa ")
 			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code)
 			alias := []string{"tx", "tx ", "tx. ", "t.x ", "t.x. "}
+			for _, a := range alias {
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code)
+			}
+		}
+
+		// thanh pho my tho
+		if strings.HasPrefix(districtName, "thanh pho ") {
+			name = strings.TrimPrefix(districtName, "thanh pho ")
+			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code)
+			alias := []string{"tp", "tp ", "tp. ", "t ", "t. "}
 			for _, a := range alias {
 				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code)
 			}
@@ -368,72 +378,100 @@ func AutoCorrect(trie *Trie, inputWord string, maxDistance int) []string {
 	return suggestions
 }
 
-func FilterLocation(locations []entity.Location) []entity.Location {
+func countWords(words []string) map[string]int {
+	result := make(map[string]int)
+	for _, word := range words {
+		result[word] = result[word] + 1
+	}
+
+	return result
+}
+func FilterLocation(locations []entity.Location, words []string) []entity.Location {
+	if len(locations) == 0 {
+		return nil
+	}
+
+	wordsCountMap := countWords(words)
+
 	result := []entity.Location{}
 	locationMap, wardIDs, districtIDs, provinceIDs := entity.Locations(locations).Simplify()
 
+	//filter ward
 	filterWardIDs := []string{}
-
-	if len(provinceIDs) > 0 {
-		// filter wards
-		filterWardLocations := []entity.Location{}
-		if len(wardIDs) == 1 {
-			filterWardLocations = append(filterWardLocations, locationMap[wardIDs[0]])
-		} else if len(wardIDs) > 0 { // if we have more than 1 ward, filter them
-			for _, id := range wardIDs {
-				ward := WardMap[id]
-				if slices.Contains(provinceIDs, ward.ProvinceCode) {
-					filterWardLocations = append(filterWardLocations, locationMap[id])
-					filterWardIDs = append(filterWardIDs, id)
-					sort.Sort(entity.Locations(filterWardLocations))
-				}
-			}
-
-			if len(filterWardIDs) == 0 {
-				filterWardLocations = append(filterWardLocations, locationMap[wardIDs[0]])
+	filterWardLocations := []entity.Location{}
+	if len(wardIDs) == 1 {
+		filterWardLocations = append(filterWardLocations, locationMap[wardIDs[0]])
+	} else if len(wardIDs) > 0 { // if we have more than 1 ward, filter them
+		for _, id := range wardIDs {
+			ward := WardMap[id]
+			if slices.Contains(provinceIDs, ward.ProvinceCode) {
+				filterWardLocations = append(filterWardLocations, locationMap[id])
+				filterWardIDs = append(filterWardIDs, id)
+				sort.Sort(entity.Locations(filterWardLocations))
 			}
 		}
 
-		if len(filterWardLocations) > 0 {
-			// to be improve
-			for _, l := range filterWardLocations {
-				ward := WardMap[l.ID]
-				if locationMap[l.ID].Name == locationMap[ward.ProvinceCode].Name {
-					// remove ward if it's the same name with province
-					for i, v := range filterWardLocations {
-						if v.ID == l.ID {
-							filterWardLocations = append(filterWardLocations[:i], filterWardLocations[i+1:]...)
-							break
-						}
+		if len(filterWardIDs) == 0 {
+			filterWardLocations = append(filterWardLocations, locationMap[wardIDs[0]])
+		}
+	}
+
+	if len(filterWardLocations) > 0 {
+		// to be improve
+		for _, l := range filterWardLocations {
+			ward := WardMap[l.ID]
+			if locationMap[l.ID].Name == locationMap[ward.ProvinceCode].Name {
+				// remove ward if it's the same name with province
+				for i, v := range filterWardLocations {
+					if v.ID == l.ID {
+						filterWardLocations = append(filterWardLocations[:i], filterWardLocations[i+1:]...)
+						break
 					}
 				}
 			}
-
-			result = append(result, filterWardLocations[0])
 		}
 
-		//filter district
-		filterDistrictLocations := []entity.Location{}
-		if len(districtIDs) == 1 {
+		result = append(result, filterWardLocations[0])
+	}
+
+	//filter district
+	filterDistrictLocations := []entity.Location{}
+	if len(districtIDs) == 1 {
+		filterDistrictLocations = append(filterDistrictLocations, locationMap[districtIDs[0]])
+	} else if len(districtIDs) > 1 { // if we have more than 1 district, filter them
+		for _, id := range districtIDs {
+			district := DistrictMap[id]
+			if slices.Contains(provinceIDs, district.ProvinceCode) {
+				filterDistrictLocations = append(filterDistrictLocations, locationMap[id])
+			}
+		}
+
+		sort.Sort(entity.Locations(filterDistrictLocations))
+
+		if len(filterDistrictLocations) == 0 {
 			filterDistrictLocations = append(filterDistrictLocations, locationMap[districtIDs[0]])
-		} else if len(districtIDs) > 1 { // if we have more than 1 district, filter them
-			for _, id := range districtIDs {
-				district := DistrictMap[id]
-				if slices.Contains(provinceIDs, district.ProvinceCode) {
-					filterDistrictLocations = append(filterDistrictLocations, locationMap[id])
-					sort.Sort(entity.Locations(filterDistrictLocations))
+		}
+	}
+
+	if len(filterDistrictLocations) == 1 {
+		result = append(result, filterDistrictLocations[0])
+	} else if len(filterDistrictLocations) > 1 {
+		// case: district with the same name with province
+		if len(provinceIDs) > 0 {
+			if locationMap[provinceIDs[0]].Name == filterDistrictLocations[0].Name {
+				if wordsCountMap[filterDistrictLocations[0].Name] > 1 {
+					result = append(result, filterDistrictLocations[0])
+				} else {
+					result = append(result, filterDistrictLocations[1])
 				}
 			}
-
-			if len(filterDistrictLocations) == 0 {
-				filterDistrictLocations = append(filterDistrictLocations, locationMap[districtIDs[0]])
-			}
 		}
 
-		if len(filterDistrictLocations) > 0 {
-			result = append(result, filterDistrictLocations[0])
-		}
+	}
 
+	//filter province
+
+	if len(provinceIDs) > 0 {
 		if len(provinceIDs) > 0 {
 			result = append(result, locationMap[provinceIDs[0]])
 		}
