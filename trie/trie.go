@@ -23,6 +23,12 @@ type Node struct {
 	Children  map[rune]*Node
 }
 
+const (
+	HighWeight   = 5
+	MediumWeight = 4
+	LowWeight    = 3
+)
+
 var skipMap = make(map[string]int)
 
 func NewTrie() *Trie {
@@ -37,7 +43,7 @@ func (trie *Trie) getCacheSkip(sentence string) int {
 	return skipMap[sentence]
 }
 
-func (trie *Trie) AddWordWithTypeAndID(word string, locationType entity.LocationType, id string) {
+func (trie *Trie) AddWordWithTypeAndID(word string, locationType entity.LocationType, id string, weight int) {
 	node := trie.Root
 
 	for _, char := range word {
@@ -52,9 +58,10 @@ func (trie *Trie) AddWordWithTypeAndID(word string, locationType entity.Location
 		node = child
 	}
 
-	location := entity.Location{LocationType: locationType, ID: id, Name: word}
+	location := entity.Location{LocationType: locationType, ID: id, Name: word, Weight: weight}
 	node.Locations = append(node.Locations, location)
 	node.IsEnd = true
+	node.Weight = weight
 }
 
 var WardMap = make(map[string]entity.Ward)
@@ -75,39 +82,39 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 		ProvinceMap[ward.ProvinceCode] = entity.Province{Name: ward.Province, NoPrefixName: noPrefixProvinceName, Code: ward.ProvinceCode}
 
 		wardName := strings.ToLower(stringutil.RemoveVietnameseAccents(ward.Name))
-		trie.AddWordWithTypeAndID(wardName, entity.LocationTypeWard, ward.Code)
+		trie.AddWordWithTypeAndID(wardName, entity.LocationTypeWard, ward.Code, HighWeight)
 		if strings.HasPrefix(wardName, "xa ") {
 			name = strings.TrimPrefix(wardName, "xa ")
 			// exclude thanh because it's to ambiguous
 			if name != "thanh" {
-				trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code)
+				trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code, LowWeight)
 			}
 
 			alias := []string{"x", "x ", "x.", "x. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeWard, ward.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeWard, ward.Code, MediumWeight)
 			}
 		}
 
 		if strings.HasPrefix(wardName, "phuong ") {
 			name = strings.TrimPrefix(wardName, "phuong ")
 			if !stringutil.IsInteger(name) && len(name) > 3 {
-				trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code)
+				trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code, LowWeight)
 			}
 			alias := []string{"p", "p ", "p.", "p. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeWard, ward.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeWard, ward.Code, MediumWeight)
 			}
 		}
 
 		if strings.HasPrefix(wardName, "thi tran ") {
 			name = strings.TrimPrefix(wardName, "thi tran ")
 			if len(name) > 4 {
-				trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code)
+				trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code, LowWeight)
 			}
 			alias := []string{"tt", "tt ", "tt.", "tt. ", "t.t ", "t.t. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeWard, ward.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeWard, ward.Code, MediumWeight)
 			}
 		}
 
@@ -115,47 +122,47 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 
 	for _, district := range DistrictMap {
 		districtName := strings.ToLower(stringutil.RemoveVietnameseAccents(district.Name))
-		trie.AddWordWithTypeAndID(districtName, entity.LocationTypeDistrict, district.Code)
-		if districtName == "huyen thanh hoa" {
-			continue
-		}
+		trie.AddWordWithTypeAndID(districtName, entity.LocationTypeDistrict, district.Code, HighWeight)
 
 		if strings.HasPrefix(districtName, "thi xa ") {
 			name = strings.TrimPrefix(districtName, "thi xa ")
-			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code)
+			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code, LowWeight)
 			alias := []string{"tx", "tx ", "tx. ", "t.x ", "t.x. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code, MediumWeight)
 			}
 		}
 
 		// thanh pho my tho
 		if strings.HasPrefix(districtName, "thanh pho ") {
 			name = strings.TrimPrefix(districtName, "thanh pho ")
-			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code)
+			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code, LowWeight)
 			alias := []string{"tp", "tp ", "tp. ", "t ", "t. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code, MediumWeight)
 			}
 		}
 
 		if strings.HasPrefix(districtName, "quan ") {
 			name = strings.TrimPrefix(districtName, "quan ")
 			if !stringutil.IsInteger(name) {
-				trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code)
+				trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code, LowWeight)
 			}
 			alias := []string{"q", "q ", "q.", "q. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code, MediumWeight)
 			}
 		}
 
 		if strings.HasPrefix(districtName, "huyen ") {
 			name = strings.TrimPrefix(districtName, "huyen ")
-			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code)
+			if name != "thanh hoa" {
+				trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code, LowWeight)
+			}
+
 			alias := []string{"h ", "h.", "h. "}
 			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code)
+				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code, MediumWeight)
 			}
 		}
 	}
@@ -178,7 +185,7 @@ func (trie *Trie) addProvinceWithPrefixAlias(provinceName, provinceCode string) 
 		prefixes  []string
 	)
 
-	trie.AddWordWithTypeAndID(provinceName, entity.LocationTypeProvince, provinceCode)
+	trie.AddWordWithTypeAndID(provinceName, entity.LocationTypeProvince, provinceCode, HighWeight)
 	if strings.HasPrefix(provinceName, "thanh pho ") {
 		trimName = strings.TrimPrefix(provinceName, "thanh pho ")
 		prefixes = []string{"", "thanh pho ", "tp", "tp ", "tp.", "tp. ", "t.", "t. ", "t.p", "t.p "}
@@ -187,7 +194,6 @@ func (trie *Trie) addProvinceWithPrefixAlias(provinceName, provinceCode string) 
 
 	if strings.HasPrefix(provinceName, "tinh ") {
 		trimName = strings.TrimPrefix(provinceName, "tinh ")
-		trie.AddWordWithTypeAndID(trimName, entity.LocationTypeProvince, provinceCode)
 		prefixes = []string{"", "tinh ", "t", "t.", "t. "}
 	}
 
@@ -195,7 +201,11 @@ func (trie *Trie) addProvinceWithPrefixAlias(provinceName, provinceCode string) 
 
 	for _, tname := range trimNames {
 		for _, prefix := range prefixes {
-			trie.AddWordWithTypeAndID(prefix+tname, entity.LocationTypeProvince, provinceCode)
+			if prefix != "" {
+				trie.AddWordWithTypeAndID(prefix+tname, entity.LocationTypeProvince, provinceCode, MediumWeight)
+			} else {
+				trie.AddWordWithTypeAndID(tname, entity.LocationTypeProvince, provinceCode, LowWeight)
+			}
 		}
 	}
 }
@@ -453,20 +463,22 @@ func FilterLocation(locations []entity.Location, words []string) []entity.Locati
 		}
 	}
 
-	if len(filterDistrictLocations) == 1 {
-		result = append(result, filterDistrictLocations[0])
-	} else if len(filterDistrictLocations) > 1 {
+	var selectedLocation entity.Location
+	if len(filterDistrictLocations) >= 1 {
+		selectedLocation = filterDistrictLocations[0]
+	}
+
+	if len(filterDistrictLocations) > 1 {
 		// case: district with the same name with province
 		if len(provinceIDs) > 0 {
-			if locationMap[provinceIDs[0]].Name == filterDistrictLocations[0].Name {
-				if wordsCountMap[filterDistrictLocations[0].Name] > 1 {
-					result = append(result, filterDistrictLocations[0])
-				} else {
-					result = append(result, filterDistrictLocations[1])
-				}
+			if locationMap[provinceIDs[0]].Name == filterDistrictLocations[0].Name && wordsCountMap[filterDistrictLocations[0].Name] <= 1 {
+				selectedLocation = filterDistrictLocations[1]
 			}
 		}
+	}
 
+	if len(filterDistrictLocations) > 0 {
+		result = append(result, selectedLocation)
 	}
 
 	//filter province

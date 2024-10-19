@@ -54,6 +54,7 @@ type Location struct {
 	Name         string
 	LocationType LocationType
 	ID           string
+	Weight       int
 }
 
 func (l Location) ToString() string {
@@ -99,7 +100,7 @@ func (ls Locations) Simplify() (map[string]Location, []string, []string, []strin
 func (ls Locations) Len() int { return len(ls) }
 
 // Hàm Less xác định thứ tự sắp xếp (ở đây là theo tuổi tăng dần)
-func (ls Locations) Less(i, j int) bool { return len(ls[i].Name) > len(ls[j].Name) }
+func (ls Locations) Less(i, j int) bool { return ls[i].Weight > ls[j].Weight }
 
 // Hàm Swap hoán đổi hai phần tử trong slice
 func (ls Locations) Swap(i, j int) { ls[i], ls[j] = ls[j], ls[i] }
