@@ -22,45 +22,51 @@ func setDynamicStatus(sentence string, offset int, word string) {
 
 func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Result {
 	result := entity.Result{}
+	skipWords := []string{}
 	locations := []entity.Location{}
-	first := 0
-	end := len(originSentence) - 1
+	firstAttempt := true
 
-	if trieDic == nil || end <= 0 {
+	if trieDic == nil || len(originSentence) == 0 {
 		return result
 	}
 
-	var extract func(first, end int) (bool, []string)
-	extract = func(first, end int) (bool, []string) {
-		if first >= end {
+	var extract func(sentence string) (bool, []string)
+	extract = func(sentence string) (bool, []string) {
+		if len(sentence) == 0 {
 			return true, nil
 		}
+		first := 0
 		offset := 0
 		// skip delimiters
 		for {
-			if !slices.Contains(delimiters, rune(originSentence[first])) {
+			if !slices.Contains(delimiters, rune(sentence[first])) {
 				break
 			}
 			first++
 		}
 
-		sentence := originSentence[first:]
+		sentence = sentence[first:]
 
 		for offset < len(sentence) {
 			word, node, skip := trieDic.ExtractWordWithSkipping(sentence, offset)
+			if skip > 0 && firstAttempt {
+				skipWords = append(skipWords, sentence[0:skip-1])
+			}
+
 			if word == "" {
+				firstAttempt = false
 				return false, nil
 			}
 			locations = append(locations, node.Locations...)
 
-			offset = len(word) + skip
-			nextFirst := first + offset
+			offset = skip + len(word)
 
-			if nextFirst == len(originSentence)-1 {
+			if offset >= len(sentence) {
+				firstAttempt = false
 				return true, []string{word}
 			}
 
-			ok, words := extract(nextFirst, end)
+			ok, words := extract(sentence[offset:])
 
 			if ok {
 				words = append(words, word)
@@ -71,8 +77,9 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Re
 		return false, nil
 	}
 
-	_, words := extract(first, end)
-	printWords(words)
+	_, words := extract(originSentence)
+	printWords(words, "words")
+	printWords(skipWords, "skips")
 	locations = trie.FilterLocation(locations, words)
 	//fmt.Println(entity.Locations(locations).ToString())
 
@@ -100,7 +107,7 @@ func AddLocationToResult(r *entity.Result, location entity.Location) {
 	}
 }
 
-func printWords(words []string) {
+func printWords(words []string, wordType string) {
 	text := strings.Join(words, "|")
-	fmt.Println("Words: " + text)
+	fmt.Println(wordType + ": " + text)
 }
