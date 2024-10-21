@@ -2,6 +2,7 @@ package parse
 
 import (
 	"address_classification/entity"
+	"address_classification/pkg/stringutil"
 	"address_classification/trie"
 	"fmt"
 	"slices"
@@ -20,7 +21,7 @@ func setDynamicStatus(sentence string, offset int, word string) {
 	dynamicStatus[sentence] = word
 }
 
-func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Result {
+func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie, reversedTrie *trie.Trie) entity.Result {
 	result := entity.Result{}
 	skipWords := []string{}
 	locations := []entity.Location{}
@@ -84,18 +85,34 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Re
 	//fmt.Println(entity.Locations(locations).ToString())
 
 	result = GetLocationFromLocations(locations)
+	if result.IsComplete() {
+		return result
+	}
+
+	DynamicParseWithLevenshtein(skipWords, reversedTrie, true)
 	return result
 }
 
-func DynamicParseWithLevenshtein(skipWords []string, trieDic *trie.Trie) entity.Result {
+func DynamicParseWithLevenshtein(skipWords []string, trieDic *trie.Trie, reversed bool) entity.Result {
 	result := entity.Result{}
 	if len(skipWords) == 0 || trieDic == nil {
 		return result
 	}
 
+	correctedWords := []string{}
 	for _, skipWord := range skipWords {
+		if reversed {
+			skipWord = stringutil.Reverse(skipWord)
+		}
 
+		correctedWord, _, _ := trieDic.ExtractWordWithAutoCorrect(skipWord)
+		if correctedWord != "" {
+			correctedWords = append(correctedWords, correctedWord)
+		}
+
+		printWords(correctedWords, "corrected words: ")
 	}
+	return result
 
 }
 

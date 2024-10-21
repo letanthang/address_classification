@@ -12,9 +12,9 @@ import (
 	"strings"
 )
 
-func ClassifyAddress(input string, trieDic *trie.Trie) entity.Result {
+func ClassifyAddress(input string, trieDic *trie.Trie, reversedTrie *trie.Trie) entity.Result {
 	input = NormalizeInput(input)
-	result := parse.DynamicParseWithSkipV2(input, trieDic)
+	result := parse.DynamicParseWithSkipV2(input, trieDic, reversedTrie)
 	return result
 }
 

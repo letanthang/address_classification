@@ -12,7 +12,8 @@ import (
 )
 
 type Trie struct {
-	Root *Node
+	Root     *Node
+	reversed bool
 }
 
 type Node struct {
@@ -32,8 +33,8 @@ const (
 
 var skipMap = make(map[string]int)
 
-func NewTrie() *Trie {
-	return &Trie{Root: &Node{Children: make(map[rune]*Node)}}
+func NewTrie(reversed bool) *Trie {
+	return &Trie{Root: &Node{Children: make(map[rune]*Node), Weight: 0}, reversed: reversed}
 }
 
 func (trie *Trie) setCacheSkip(sentence string, skip int) {
@@ -45,6 +46,10 @@ func (trie *Trie) getCacheSkip(sentence string) int {
 }
 
 func (trie *Trie) AddWordWithTypeAndID(word string, locationType entity.LocationType, id string, weight int) {
+	if trie.reversed {
+		word = stringutil.Reverse(word)
+	}
+
 	node := trie.Root
 
 	for _, char := range word {
@@ -205,7 +210,7 @@ func (trie *Trie) addProvinceWithPrefixAlias(provinceName, provinceCode string) 
 			if prefix != "" {
 				trie.AddWordWithTypeAndID(prefix+tname, entity.LocationTypeProvince, provinceCode, MediumWeight)
 			} else {
-				trie.AddWordWithTypeAndID(tname, entity.LocationTypeProvince, provinceCode, LowWeight, revesed)
+				trie.AddWordWithTypeAndID(tname, entity.LocationTypeProvince, provinceCode, LowWeight)
 			}
 		}
 	}
@@ -338,7 +343,7 @@ func (trie *Trie) ExtractWordWithAutoCorrect(word string) (string, WordDistance,
 		}
 
 		slices.SortFunc(distances, func(i, j WordDistance) int {
-			return cmp.Compare(j.Distance, i.Distance)
+			return cmp.Compare(i.Distance, j.Distance)
 		})
 
 		_, targetNode := trie.ExtractWord(distances[0].Word, 0)
