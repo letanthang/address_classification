@@ -334,8 +334,13 @@ func (trie *Trie) ExtractWordWithAutoCorrect(word string) (string, WordDistance,
 
 	prefix := word[:node.Height]
 	if node.Height > 2 {
+		word = stringutil.RemoveDelimeter(word)
 		distances := []WordDistance{}
 		words := trie.FindWordsWithPrefix(prefix)
+
+		if len(words) == 0 {
+			return "", WordDistance{}, nil
+		}
 
 		for _, w := range words {
 			distance := LevenshteinDistance(word, w)
@@ -346,7 +351,15 @@ func (trie *Trie) ExtractWordWithAutoCorrect(word string) (string, WordDistance,
 			return cmp.Compare(i.Distance, j.Distance)
 		})
 
-		_, targetNode := trie.ExtractWord(distances[0].Word, 0)
+		minDT := distances[0].Distance
+		minDistances := []WordDistance{}
+		for _, dt := range distances {
+			if dt.Distance == minDT {
+				minDistances = append(minDistances, dt)
+			}
+		}
+
+		_, targetNode := trie.ExtractWord(minDistances[0].Word, 0)
 
 		return distances[0].Word, distances[0], targetNode
 

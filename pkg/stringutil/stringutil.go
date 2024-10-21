@@ -37,6 +37,16 @@ var vietnameseTones = map[rune]rune{
 	'Ú': 'U', 'Ù': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ụ': 'U', 'Ư': 'U', 'Ứ': 'U', 'Ừ': 'U', 'Ử': 'U', 'Ữ': 'U', 'Ự': 'U',
 	'Ý': 'Y', 'Ỳ': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y', 'Ỵ': 'Y', 'đ': 'd', 'Đ': 'D',
 }
+var delimiters = []rune{',', '.', '-', '_', '+'}
+
+func RemoveDelimeter(name string) string {
+	result := name
+	for _, delimiter := range delimiters {
+		result = strings.ReplaceAll(result, string(delimiter), "")
+	}
+
+	return result
+}
 
 func RemoveWardPrefix(name string) string {
 	result := name

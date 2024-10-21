@@ -22,7 +22,7 @@ func main() {
 
 	input := []string{
 		"TT Tân Bình Huyện Yên Sơn, Tuyên Quang",
-		"284DBis Ng Văn Giáo, P3, Mỹ Tho, Tie.Giang.",
+		"284DBis Ng Văn Giáo, P3, Mỹ Tho, Ti.Giang.",
 		//"Nà Làng Phú Bình, Chiêm Hoá, Chiêm Hoá, Tuyên Quang",
 		//"59/12 Ng-B-Khiêm, Đa Kao Quận 1, TP. Hồ Chí Minh",
 		//"46/8F Trung Chánh 2 Trung Chánh, Hóc Môn, TP. Hồ Chí Minh",

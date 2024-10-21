@@ -63,3 +63,30 @@ func Test_Reverse(t *testing.T) {
 		}
 	}
 }
+
+func Test_RemoveDelimeter(t *testing.T) {
+	cases := []struct {
+		args string
+		want string
+	}{
+		{
+			args: "ab,c",
+			want: "abc",
+		},
+		{
+			args: "123.abc",
+			want: "123abc",
+		},
+		{
+			args: "123.abc",
+			want: "123abc",
+		},
+	}
+
+	for _, c := range cases {
+		got := RemoveDelimeter(c.args)
+		if got != c.want {
+			t.Errorf("Reverse (%q) == %s, want %s", c.args, got, c.want)
+		}
+	}
+}
