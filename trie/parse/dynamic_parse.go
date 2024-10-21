@@ -87,6 +87,18 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie) entity.Re
 	return result
 }
 
+func DynamicParseWithLevenshtein(skipWords []string, trieDic *trie.Trie) entity.Result {
+	result := entity.Result{}
+	if len(skipWords) == 0 || trieDic == nil {
+		return result
+	}
+
+	for _, skipWord := range skipWords {
+
+	}
+
+}
+
 func GetLocationFromLocations(locations []entity.Location) entity.Result {
 	result := entity.Result{}
 

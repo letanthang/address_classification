@@ -78,3 +78,16 @@ func IsInteger(str string) bool {
 	_, err := strconv.Atoi(str)
 	return err == nil
 }
+
+func Reverse(s string) string {
+	// Chuyển chuỗi thành slice của rune
+	runes := []rune(s)
+
+	// Đảo ngược slice của rune
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+
+	// Chuyển lại thành chuỗi
+	return string(runes)
+}

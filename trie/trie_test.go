@@ -8,12 +8,12 @@ import (
 
 func TestTrie_ExtractWord(t *testing.T) {
 	trie := NewTrie()
-	trie.AddWordWithTypeAndID("nguyen", entity.LocationTypeOther, "1")
-	trie.AddWordWithTypeAndID("nguyen tri phuong", entity.LocationTypeOther, "2")
-	trie.AddWordWithTypeAndID("tp ho chi minh", entity.LocationTypeProvince, "3")
-	trie.AddWordWithTypeAndID("phuong 11", entity.LocationTypeProvince, "3")
-	trie.AddWordWithTypeAndID("p. quang tho", entity.LocationTypeWard, "4")
-	trie.AddWordWithTypeAndID("p quang tho", entity.LocationTypeWard, "4")
+	trie.AddWordWithTypeAndID("nguyen", entity.LocationTypeOther, "1", 0)
+	trie.AddWordWithTypeAndID("nguyen tri phuong", entity.LocationTypeOther, "2", 0)
+	trie.AddWordWithTypeAndID("tp ho chi minh", entity.LocationTypeProvince, "3", 0)
+	trie.AddWordWithTypeAndID("phuong 11", entity.LocationTypeProvince, "3", 0)
+	trie.AddWordWithTypeAndID("p. quang tho", entity.LocationTypeWard, "4", 0)
+	trie.AddWordWithTypeAndID("p quang tho", entity.LocationTypeWard, "4", 0)
 
 	type args struct {
 		name     string
@@ -75,41 +75,6 @@ func TestTrie_ExtractWord(t *testing.T) {
 				offset:   0,
 			},
 			want: "p quang tho",
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.args.name, func(t *testing.T) {
-			word, _ := trie.ExtractWord(c.args.sentence, c.args.offset)
-			assert.Equal(t, c.want, word)
-		})
-	}
-}
-
-func TestTrie_ExtractWord_WithBuildTrie(t *testing.T) {
-	trie := NewTrie()
-	trie.AddWordWithTypeAndID("nguyen", entity.LocationTypeOther, "1")
-	trie.AddWordWithTypeAndID("nguyen tri phuong", entity.LocationTypeOther, "2")
-	trie.AddWordWithTypeAndID("tp ho chi minh", entity.LocationTypeProvince, "3")
-	trie.AddWordWithTypeAndID("phuong 11", entity.LocationTypeProvince, "3")
-	trie.AddWordWithTypeAndID("p. quang tho", entity.LocationTypeWard, "4")
-
-	type args struct {
-		name     string
-		sentence string
-		offset   int
-	}
-
-	cases := []struct {
-		args args
-		want string
-	}{
-		{
-			args: args{
-				sentence: "p. quang tho",
-				offset:   0,
-			},
-			want: "p. quang tho",
 		},
 	}
 

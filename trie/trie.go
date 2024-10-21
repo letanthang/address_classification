@@ -3,6 +3,7 @@ package trie
 import (
 	"address_classification/entity"
 	"address_classification/pkg/stringutil"
+	"cmp"
 	"fmt"
 	"math"
 	"slices"
@@ -204,7 +205,7 @@ func (trie *Trie) addProvinceWithPrefixAlias(provinceName, provinceCode string) 
 			if prefix != "" {
 				trie.AddWordWithTypeAndID(prefix+tname, entity.LocationTypeProvince, provinceCode, MediumWeight)
 			} else {
-				trie.AddWordWithTypeAndID(tname, entity.LocationTypeProvince, provinceCode, LowWeight)
+				trie.AddWordWithTypeAndID(tname, entity.LocationTypeProvince, provinceCode, LowWeight, revesed)
 			}
 		}
 	}
@@ -313,6 +314,45 @@ func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, 
 	}
 
 	return result, node, skip
+}
+
+func (trie *Trie) ExtractWordWithAutoCorrect(word string) (string, WordDistance, *Node) {
+	node := trie.Root
+
+	for _, char := range word {
+		child, ok := node.Children[char]
+		if !ok {
+			break
+		}
+		node = child
+	}
+
+	prefix := word[:node.Height]
+	if node.Height > 2 {
+		distances := []WordDistance{}
+		words := trie.FindWordsWithPrefix(prefix)
+
+		for _, w := range words {
+			distance := LevenshteinDistance(word, w)
+			distances = append(distances, WordDistance{Word: w, Distance: distance})
+		}
+
+		slices.SortFunc(distances, func(i, j WordDistance) int {
+			return cmp.Compare(j.Distance, i.Distance)
+		})
+
+		_, targetNode := trie.ExtractWord(distances[0].Word, 0)
+
+		return distances[0].Word, distances[0], targetNode
+
+	}
+
+	return "", WordDistance{}, nil
+}
+
+type WordDistance struct {
+	Word     string
+	Distance int
 }
 
 // FindWordsWithPrefix tìm tất cả các từ bắt đầu bằng prefix

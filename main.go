@@ -13,6 +13,11 @@ func main() {
 	trieDic := trie.NewTrie()
 	trieDic.BuildTrieWithWards(wards)
 
+
+
+	reverseTrie := trie.NewTrie()
+	reverseTrie.BuildReverseTrieWithWards(wards)
+
 	//trieDic.PrintWithPrefix("thanh")
 	ok := trieDic.IsEnd("chiem hoa")
 	fmt.Println(ok)
