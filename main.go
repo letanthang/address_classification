@@ -5,10 +5,15 @@ import (
 	"address_classification/pkg/triehelper"
 	"address_classification/trie"
 	"address_classification/trie/parse"
+	"fmt"
 	"log"
 )
 
 func main() {
+	TestWithRealCases()
+}
+
+func TestSimple() {
 	parse.Debug = true
 
 	wards := triehelper.ImportWardDB("./assets/wards.csv")
@@ -18,32 +23,37 @@ func main() {
 	reversedTrie := trie.NewTrie(true)
 	reversedTrie.BuildTrieWithWards(wards)
 
-	//reversedTrie.PrintWithPrefix("gnaig")
-	//ok := reversedTrie.IsEnd("chiem hoa")
-	//fmt.Println(ok)
-
 	input := []string{
-		"D2, Thạnh Lợi, Vĩnh Thạnh Cần Thơ",
-		//"Nà Làng Phú Bình, Chiêm Hoá, Chiêm Hoá, Tuyên Quang",
-		//"357/28,Ng-T- Thuật,P1,Q3,TP.HồChíMinh.",
-		//"TT Tân Bình Huyện Yên Sơn, Tuyên Quang",
-		//"284DBis Ng Văn Giáo, P3, Mỹ Tho, Ti.Giang.",
-		//"59/12 Ng-B-Khiêm, Đa Kao Quận 1, TP. Hồ Chí Minh",
-		//"46/8F Trung Chánh 2 Trung Chánh, Hóc Môn, TP. Hồ Chí Minh",
-		//"nguyen tri phuong, phuong 10, quan 10, tp ho chi minh",
-		//"nguyen tri, phuong 10, quan 1, tp ho chi minh",
-		//"nguyen tri, phuong 100, quan 11, tp ho chi minh",
-		//"nguyen tri phuong 100 quan 111 tp ho chi minh",
-		//"quan 111 tp ho chi minh",
-		//"tp ho chí minh quận 2", // missing Q2 in db/trie
-		//"p Quảng Thọ,T.P Sầm Swn,TY. thanh Hóa",
+
+		"46/8F Trung Chánh 2 Trung Chánh, Hóc Môn, TP. Hồ Chí Minh",
 	}
 
-	//word := trieDic.ExtractWord(input[0], 17)
-	//log.Println(word)
 	for _, address := range input {
 		result := triehelper.ClassifyAddress(address, trieDic, reversedTrie)
 		logResult(result)
+	}
+}
+
+func TestWithRealCases() {
+	parse.Debug = true
+	wards := triehelper.ImportWardDB("./assets/wards.csv")
+
+	trieTree := trie.NewTrie(false)
+	trieTree.BuildTrieWithWards(wards)
+
+	reversedTrie := trie.NewTrie(true)
+	reversedTrie.BuildTrieWithWards(wards)
+
+	cases := triehelper.ImportTestCases("./assets/inputs.json")
+
+	for i, c := range cases {
+		result := triehelper.ClassifyAddress(c.Input, trieTree, reversedTrie)
+		if result.Ward != c.Output.Ward || result.District != c.Output.District || result.Province != c.Output.Province {
+			//fmt.Println(i, "Failed")
+			logResult(result)
+		} else {
+			fmt.Println(i, "Passed")
+		}
 	}
 }
 

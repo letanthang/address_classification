@@ -143,9 +143,11 @@ func MergeResult(source, destination *entity.Result) {
 	if source.Ward != "" && destination.Ward == "" {
 		destination.Ward = source.Ward
 	}
+
 	if source.District != "" && destination.District == "" {
 		destination.District = source.District
 	}
+
 	if source.Province != "" && destination.Province == "" {
 		destination.Province = source.Province
 	}
