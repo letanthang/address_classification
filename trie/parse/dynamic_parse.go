@@ -2,12 +2,14 @@ package parse
 
 import (
 	"address_classification/entity"
-	"address_classification/pkg/stringutil"
 	"address_classification/trie"
 	"fmt"
 	"slices"
+	"sort"
 	"strings"
 )
+
+var Debug bool
 
 var delimiters = []rune{' ', ',', '-'}
 
@@ -89,11 +91,13 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie, reversedT
 		return result
 	}
 
-	DynamicParseWithLevenshtein(skipWords, reversedTrie, true)
+	correctedResult := DynamicParseWithLevenshtein(skipWords, reversedTrie)
+	MergeResult(&correctedResult, &result)
+
 	return result
 }
 
-func DynamicParseWithLevenshtein(skipWords []string, trieDic *trie.Trie, reversed bool) entity.Result {
+func DynamicParseWithLevenshtein(skipWords []string, trieDic *trie.Trie) entity.Result {
 	result := entity.Result{}
 	if len(skipWords) == 0 || trieDic == nil {
 		return result
@@ -101,13 +105,12 @@ func DynamicParseWithLevenshtein(skipWords []string, trieDic *trie.Trie, reverse
 
 	correctedWords := []string{}
 	for _, skipWord := range skipWords {
-		if reversed {
-			skipWord = stringutil.Reverse(skipWord)
-		}
-
-		correctedWord, _, _ := trieDic.ExtractWordWithAutoCorrect(skipWord)
+		correctedWord, _, node := trieDic.ExtractWordWithAutoCorrect(skipWord)
 		if correctedWord != "" {
 			correctedWords = append(correctedWords, correctedWord)
+
+			sort.Sort(entity.Locations(node.Locations))
+			AddLocationToResult(&result, node.Locations[0])
 		}
 
 		printWords(correctedWords, "corrected words: ")
@@ -136,7 +139,23 @@ func AddLocationToResult(r *entity.Result, location entity.Location) {
 	}
 }
 
+func MergeResult(source, destination *entity.Result) {
+	if source.Ward != "" && destination.Ward == "" {
+		destination.Ward = source.Ward
+	}
+	if source.District != "" && destination.District == "" {
+		destination.District = source.District
+	}
+	if source.Province != "" && destination.Province == "" {
+		destination.Province = source.Province
+	}
+}
+
 func printWords(words []string, wordType string) {
+	if !Debug {
+		return
+	}
+
 	text := strings.Join(words, "|")
 	fmt.Println(wordType + ": " + text)
 }

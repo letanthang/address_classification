@@ -4,11 +4,13 @@ import (
 	"address_classification/entity"
 	"address_classification/pkg/triehelper"
 	"address_classification/trie"
-	"fmt"
+	"address_classification/trie/parse"
 	"log"
 )
 
 func main() {
+	parse.Debug = true
+
 	wards := triehelper.ImportWardDB("./assets/wards.csv")
 	trieDic := trie.NewTrie(false)
 	trieDic.BuildTrieWithWards(wards)
@@ -16,14 +18,16 @@ func main() {
 	reversedTrie := trie.NewTrie(true)
 	reversedTrie.BuildTrieWithWards(wards)
 
-	reversedTrie.PrintWithPrefix("gnaig")
-	ok := reversedTrie.IsEnd("chiem hoa")
-	fmt.Println(ok)
+	//reversedTrie.PrintWithPrefix("gnaig")
+	//ok := reversedTrie.IsEnd("chiem hoa")
+	//fmt.Println(ok)
 
 	input := []string{
-		"TT Tân Bình Huyện Yên Sơn, Tuyên Quang",
-		"284DBis Ng Văn Giáo, P3, Mỹ Tho, Ti.Giang.",
+		"D2, Thạnh Lợi, Vĩnh Thạnh Cần Thơ",
 		//"Nà Làng Phú Bình, Chiêm Hoá, Chiêm Hoá, Tuyên Quang",
+		//"357/28,Ng-T- Thuật,P1,Q3,TP.HồChíMinh.",
+		//"TT Tân Bình Huyện Yên Sơn, Tuyên Quang",
+		//"284DBis Ng Văn Giáo, P3, Mỹ Tho, Ti.Giang.",
 		//"59/12 Ng-B-Khiêm, Đa Kao Quận 1, TP. Hồ Chí Minh",
 		//"46/8F Trung Chánh 2 Trung Chánh, Hóc Môn, TP. Hồ Chí Minh",
 		//"nguyen tri phuong, phuong 10, quan 10, tp ho chi minh",

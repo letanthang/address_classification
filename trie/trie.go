@@ -142,7 +142,10 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 		// thanh pho my tho
 		if strings.HasPrefix(districtName, "thanh pho ") {
 			name = strings.TrimPrefix(districtName, "thanh pho ")
-			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code, LowWeight)
+			if name != "vinh" {
+				trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code, LowWeight)
+			}
+
 			alias := []string{"tp", "tp ", "tp. ", "t ", "t. "}
 			for _, a := range alias {
 				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code, MediumWeight)
@@ -322,6 +325,9 @@ func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, 
 }
 
 func (trie *Trie) ExtractWordWithAutoCorrect(word string) (string, WordDistance, *Node) {
+	if trie.reversed {
+		word = stringutil.Reverse(word)
+	}
 	node := trie.Root
 
 	for _, char := range word {
