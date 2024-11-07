@@ -14,7 +14,7 @@ import (
 
 func ClassifyAddress(input string, trieDic *trie.Trie, reversedTrie *trie.Trie) entity.Result {
 	input = NormalizeInput(input)
-	result := parse.DynamicParseWithSkipV2(input, trieDic, reversedTrie)
+	result := parse.DynamicParse(input, trieDic, reversedTrie)
 	return result
 }
 

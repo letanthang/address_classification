@@ -11,10 +11,11 @@ import (
 
 func main() {
 	TestWithRealCases()
+	//TestSimple()
 }
 
 func TestSimple() {
-	parse.Debug = true
+	//parse.Debug = true
 
 	wards := triehelper.ImportWardDB("./assets/wards.csv")
 	trieDic := trie.NewTrie(false)
@@ -24,18 +25,29 @@ func TestSimple() {
 	reversedTrie.BuildTrieWithWards(wards)
 
 	input := []string{
-
-		"46/8F Trung Chánh 2 Trung Chánh, Hóc Môn, TP. Hồ Chí Minh",
+		"TT Tân Bình Huyện Yên Sơn, Tuyên Quang",
 	}
 
-	for _, address := range input {
+	for i := 0; i < 1000000; i++ {
+		address := input[0]
 		result := triehelper.ClassifyAddress(address, trieDic, reversedTrie)
-		logResult(result)
+		if i == 0 {
+			logResult(result)
+		}
+
+		if result.Ward != "Tân Bình" {
+			logResult(result)
+			fmt.Println(parse.DebugFlag)
+			fmt.Println("words", parse.Words)
+			fmt.Println(entity.Locations(parse.OriginLocations).ToString())
+			fmt.Println(entity.Locations(parse.Locations).ToString())
+			break
+		}
 	}
 }
 
 func TestWithRealCases() {
-	parse.Debug = true
+	//parse.Debug = true
 	wards := triehelper.ImportWardDB("./assets/wards.csv")
 
 	trieTree := trie.NewTrie(false)
@@ -49,8 +61,9 @@ func TestWithRealCases() {
 	for i, c := range cases {
 		result := triehelper.ClassifyAddress(c.Input, trieTree, reversedTrie)
 		if result.Ward != c.Output.Ward || result.District != c.Output.District || result.Province != c.Output.Province {
-			//fmt.Println(i, "Failed")
 			logResult(result)
+			fmt.Println(entity.Locations(parse.Locations).ToString())
+			return
 		} else {
 			fmt.Println(i, "Passed")
 		}

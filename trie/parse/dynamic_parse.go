@@ -9,37 +9,39 @@ import (
 	"strings"
 )
 
-var Debug bool
+var (
+	Debug           bool
+	DebugFlag       string
+	Words           []string
+	OriginLocations []entity.Location
+	Locations       []entity.Location
+	delimiters      = []rune{' ', ',', '-'}
+	dynamicStatus   = map[string]string{}
+)
 
-var delimiters = []rune{' ', ',', '-'}
+func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.Trie) entity.Result {
+	var (
+		skipWords []string
+		words     []string
+		locations []entity.Location
+	)
 
-var dynamicStatus = map[string]string{}
-
-func getDynamicStatus(sentence string, offset int) string {
-	return dynamicStatus[sentence]
-}
-
-func setDynamicStatus(sentence string, offset int, word string) {
-	dynamicStatus[sentence] = word
-}
-
-func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie, reversedTrie *trie.Trie) entity.Result {
+	DebugFlag = "empty"
 	result := entity.Result{}
-	skipWords := []string{}
-	locations := []entity.Location{}
 	firstAttempt := true
 
 	if trieDic == nil || len(originSentence) == 0 {
 		return result
 	}
 
-	var extract func(sentence string) (bool, []string)
-	extract = func(sentence string) (bool, []string) {
+	var extract func(sentence string)
+	extract = func(sentence string) {
 		if len(sentence) == 0 {
-			return true, nil
+			return
 		}
 		first := 0
 		offset := 0
+		i := 0
 		// skip delimiters
 		for {
 			if !slices.Contains(delimiters, rune(sentence[first])) {
@@ -49,50 +51,53 @@ func DynamicParseWithSkipV2(originSentence string, trieDic *trie.Trie, reversedT
 		}
 
 		sentence = sentence[first:]
-
+		//DebugFlag = DebugFlag + " " + sentence
 		for offset < len(sentence) {
+			i++
 			word, node, skip := trieDic.ExtractWordWithSkipping(sentence, offset)
 			if skip > 0 && firstAttempt {
 				skipWords = append(skipWords, sentence[0:skip-1])
 			}
 
+			DebugFlag = fmt.Sprintf("%s - %d - %s - %d", DebugFlag, i, word, skip)
 			if word == "" {
 				firstAttempt = false
-				return false, nil
+				return
 			}
+
+			words = append(words, word)
 			locations = append(locations, node.Locations...)
 
 			offset = skip + len(word)
 
 			if offset >= len(sentence) {
 				firstAttempt = false
-				return true, []string{word}
+				return
 			}
 
-			ok, words := extract(sentence[offset:])
-
-			if ok {
-				words = append(words, word)
-				return true, words
-			}
+			extract(sentence[offset:])
 		}
 
-		return false, nil
+		return
 	}
 
-	_, words := extract(originSentence)
+	extract(originSentence)
 	printWords(words, "words")
 	printWords(skipWords, "skips")
+
+	Words = words
+	OriginLocations = locations
 	locations = trie.FilterLocation(locations, words)
+	Locations = locations
 	//fmt.Println(entity.Locations(locations).ToString())
 
-	result = GetLocationFromLocations(locations)
+	result = getLocationFromLocations(locations)
 	if result.IsComplete() {
 		return result
 	}
 
 	correctedResult := DynamicParseWithLevenshtein(skipWords, reversedTrie)
-	MergeResult(&correctedResult, &result)
+	mergeResult(&correctedResult, &result)
 
 	return result
 }
@@ -119,7 +124,7 @@ func DynamicParseWithLevenshtein(skipWords []string, trieDic *trie.Trie) entity.
 
 }
 
-func GetLocationFromLocations(locations []entity.Location) entity.Result {
+func getLocationFromLocations(locations []entity.Location) entity.Result {
 	result := entity.Result{}
 
 	for _, location := range locations {
@@ -139,7 +144,7 @@ func AddLocationToResult(r *entity.Result, location entity.Location) {
 	}
 }
 
-func MergeResult(source, destination *entity.Result) {
+func mergeResult(source, destination *entity.Result) {
 	if source.Ward != "" && destination.Ward == "" {
 		destination.Ward = source.Ward
 	}
@@ -160,4 +165,12 @@ func printWords(words []string, wordType string) {
 
 	text := strings.Join(words, "|")
 	fmt.Println(wordType + ": " + text)
+}
+
+func getDynamicStatus(sentence string, offset int) string {
+	return dynamicStatus[sentence]
+}
+
+func setDynamicStatus(sentence string, offset int, word string) {
+	dynamicStatus[sentence] = word
 }

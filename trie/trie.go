@@ -5,9 +5,7 @@ import (
 	"address_classification/pkg/stringutil"
 	"cmp"
 	"fmt"
-	"math"
 	"slices"
-	"sort"
 	"strings"
 )
 
@@ -25,24 +23,28 @@ type Node struct {
 	Children  map[rune]*Node
 }
 
+type WordDistance struct {
+	Word     string
+	Distance int
+}
+
 const (
 	HighWeight   = 5
 	MediumWeight = 4
 	LowWeight    = 3
+	LowestWeight = 2
 )
 
-var skipMap = make(map[string]int)
+var (
+	WardMap     = make(map[string]entity.Ward)
+	DistrictMap = make(map[string]entity.District)
+	ProvinceMap = make(map[string]entity.Province)
+
+	skipMap = make(map[string]int)
+)
 
 func NewTrie(reversed bool) *Trie {
 	return &Trie{Root: &Node{Children: make(map[rune]*Node), Weight: 0}, reversed: reversed}
-}
-
-func (trie *Trie) setCacheSkip(sentence string, skip int) {
-	skipMap[sentence] = skip
-}
-
-func (trie *Trie) getCacheSkip(sentence string) int {
-	return skipMap[sentence]
 }
 
 func (trie *Trie) AddWordWithTypeAndID(word string, locationType entity.LocationType, id string, weight int) {
@@ -70,10 +72,6 @@ func (trie *Trie) AddWordWithTypeAndID(word string, locationType entity.Location
 	node.Weight = weight
 }
 
-var WardMap = make(map[string]entity.Ward)
-var DistrictMap = make(map[string]entity.District)
-var ProvinceMap = make(map[string]entity.Province)
-
 func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 	name := ""
 	for _, ward := range wards {
@@ -81,6 +79,9 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 		noPrefixWardName := stringutil.RemoveWardPrefix(ward.Name)
 		noPrefixDistrictName := stringutil.RemoveDistrictPrefix(ward.District)
 		noPrefixProvinceName := stringutil.RemoveProvincePrefix(ward.Province)
+
+		noPrefixNoAccentWardName := stringutil.StandardizeLocation(noPrefixWardName)
+		noPrefixNoAccentDistrictName := stringutil.StandardizeLocation(noPrefixDistrictName)
 
 		ward.NoPrefixName = noPrefixWardName
 		WardMap[ward.Code] = ward
@@ -105,7 +106,11 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 		if strings.HasPrefix(wardName, "phuong ") {
 			name = strings.TrimPrefix(wardName, "phuong ")
 			if !stringutil.IsInteger(name) && len(name) > 3 {
-				trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code, LowWeight)
+				if noPrefixWardName == noPrefixDistrictName || noPrefixNoAccentWardName == noPrefixNoAccentDistrictName {
+					trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code, LowestWeight)
+				} else {
+					trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code, LowWeight)
+				}
 			}
 			alias := []string{"p", "p ", "p.", "p. "}
 			for _, a := range alias {
@@ -116,7 +121,12 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 		if strings.HasPrefix(wardName, "thi tran ") {
 			name = strings.TrimPrefix(wardName, "thi tran ")
 			if len(name) > 4 {
-				trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code, LowWeight)
+				if noPrefixWardName == noPrefixDistrictName {
+					trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code, LowestWeight)
+				} else {
+					trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code, LowWeight)
+				}
+
 			}
 			alias := []string{"tt", "tt ", "tt.", "tt. ", "t.t ", "t.t. "}
 			for _, a := range alias {
@@ -127,12 +137,20 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 	}
 
 	for _, district := range DistrictMap {
+		noPrefixDistrictName := stringutil.RemoveDistrictPrefix(district.Name)
+		noPrefixProvinceName := stringutil.RemoveProvincePrefix(ProvinceMap[district.ProvinceCode].Name)
+
 		districtName := strings.ToLower(stringutil.RemoveVietnameseAccents(district.Name))
 		trie.AddWordWithTypeAndID(districtName, entity.LocationTypeDistrict, district.Code, HighWeight)
 
 		if strings.HasPrefix(districtName, "thi xa ") {
 			name = strings.TrimPrefix(districtName, "thi xa ")
-			trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code, LowWeight)
+			if noPrefixDistrictName == noPrefixProvinceName {
+				trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code, LowestWeight)
+			} else {
+				trie.AddWordWithTypeAndID(name, entity.LocationTypeDistrict, district.Code, LowWeight)
+			}
+
 			alias := []string{"tx", "tx ", "tx. ", "t.x ", "t.x. "}
 			for _, a := range alias {
 				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeDistrict, district.Code, MediumWeight)
@@ -182,88 +200,6 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 	}
 }
 
-func (trie *Trie) getProvinceAlias(provinceName string) []string {
-	alias := strings.ReplaceAll(provinceName, " ", "")
-	return []string{provinceName, alias}
-}
-
-func (trie *Trie) addProvinceWithPrefixAlias(provinceName, provinceCode string) {
-	var (
-		trimName  string
-		trimNames []string
-		prefixes  []string
-	)
-
-	trie.AddWordWithTypeAndID(provinceName, entity.LocationTypeProvince, provinceCode, HighWeight)
-	if strings.HasPrefix(provinceName, "thanh pho ") {
-		trimName = strings.TrimPrefix(provinceName, "thanh pho ")
-		prefixes = []string{"", "thanh pho ", "tp", "tp ", "tp.", "tp. ", "t.", "t. ", "t.p", "t.p "}
-
-	}
-
-	if strings.HasPrefix(provinceName, "tinh ") {
-		trimName = strings.TrimPrefix(provinceName, "tinh ")
-		prefixes = []string{"", "tinh ", "t", "t.", "t. "}
-	}
-
-	trimNames = trie.getProvinceAlias(trimName)
-
-	for _, tname := range trimNames {
-		for _, prefix := range prefixes {
-			if prefix != "" {
-				trie.AddWordWithTypeAndID(prefix+tname, entity.LocationTypeProvince, provinceCode, MediumWeight)
-			} else {
-				trie.AddWordWithTypeAndID(tname, entity.LocationTypeProvince, provinceCode, LowWeight)
-			}
-		}
-	}
-}
-
-func (trie *Trie) Print() {
-	var dfs func(node *Node, prefix string)
-	dfs = func(node *Node, prefix string) {
-		if node.IsEnd {
-
-			fmt.Printf("%s, %s\n", prefix, entity.Locations(node.Locations).ToString()) // Print the word when you reach the end of it
-		}
-		for char, child := range node.Children {
-			dfs(child, prefix+string(char)) // Recursively print child nodes
-		}
-	}
-	fmt.Println("------------Start print trie ----------")
-	dfs(trie.Root, "")
-	fmt.Println("------------End print trie ----------")
-}
-
-func (trie *Trie) PrintWithPrefix(prefix string) {
-	node := trie.searchPrefix(prefix)
-
-	var dfs func(node *Node, prefix string)
-	dfs = func(node *Node, prefix string) {
-		if node.IsEnd {
-			fmt.Printf("%s, %s \n", prefix, entity.Locations(node.Locations).ToString()) // Print the word when you reach the end of it
-		}
-		for char, child := range node.Children {
-			dfs(child, prefix+string(char)) // Recursively print child nodes
-		}
-	}
-	fmt.Println("------------Start print trie ----------")
-	dfs(node, prefix)
-	fmt.Println("------------End print trie ----------")
-}
-
-func (trie *Trie) IsEnd(word string) bool {
-	node := trie.Root
-	for _, char := range word {
-		child, ok := node.Children[char]
-		if !ok {
-			return false
-		}
-		node = child
-	}
-	return node.IsEnd
-}
-
 func (trie *Trie) ExtractWord(sentence string, offset int) (string, *Node) {
 	node := trie.Root
 	breakFlag := false
@@ -298,12 +234,8 @@ func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, 
 	var (
 		result string
 		node   *Node
+		skip   int
 	)
-	skip := trie.getCacheSkip(sentence)
-
-	if skip > len(sentence) {
-		return "", nil, 0
-	}
 
 	for {
 		result, node = trie.ExtractWord(sentence[skip:], offset)
@@ -315,10 +247,6 @@ func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, 
 		if skip >= len(sentence) {
 			break
 		}
-	}
-
-	if skip > 0 {
-		trie.setCacheSkip(sentence, skip)
 	}
 
 	return result, node, skip
@@ -374,11 +302,6 @@ func (trie *Trie) ExtractWordWithAutoCorrect(word string) (string, WordDistance,
 	return "", WordDistance{}, nil
 }
 
-type WordDistance struct {
-	Word     string
-	Distance int
-}
-
 // FindWordsWithPrefix tìm tất cả các từ bắt đầu bằng prefix
 func (trie *Trie) FindWordsWithPrefix(prefix string) []string {
 	node := trie.searchPrefix(prefix)
@@ -387,6 +310,95 @@ func (trie *Trie) FindWordsWithPrefix(prefix string) []string {
 		trie.dfs(node, prefix, &words)
 	}
 	return words
+}
+func (trie *Trie) Print() {
+	var dfs func(node *Node, prefix string)
+	dfs = func(node *Node, prefix string) {
+		if node.IsEnd {
+
+			fmt.Printf("%s, %s\n", prefix, entity.Locations(node.Locations).ToString()) // Print the word when you reach the end of it
+		}
+		for char, child := range node.Children {
+			dfs(child, prefix+string(char)) // Recursively print child nodes
+		}
+	}
+	fmt.Println("------------Start print trie ----------")
+	dfs(trie.Root, "")
+	fmt.Println("------------End print trie ----------")
+}
+
+func (trie *Trie) PrintWithPrefix(prefix string) {
+	node := trie.searchPrefix(prefix)
+
+	var dfs func(node *Node, prefix string)
+	dfs = func(node *Node, prefix string) {
+		if node.IsEnd {
+			fmt.Printf("%s, %s \n", prefix, entity.Locations(node.Locations).ToString()) // Print the word when you reach the end of it
+		}
+		for char, child := range node.Children {
+			dfs(child, prefix+string(char)) // Recursively print child nodes
+		}
+	}
+	fmt.Println("------------Start print trie ----------")
+	dfs(node, prefix)
+	fmt.Println("------------End print trie ----------")
+}
+
+func (trie *Trie) IsEnd(word string) bool {
+	node := trie.Root
+	for _, char := range word {
+		child, ok := node.Children[char]
+		if !ok {
+			return false
+		}
+		node = child
+	}
+	return node.IsEnd
+}
+
+func (trie *Trie) getProvinceAlias(provinceName string) []string {
+	alias := strings.ReplaceAll(provinceName, " ", "")
+	return []string{provinceName, alias}
+}
+
+func (trie *Trie) addProvinceWithPrefixAlias(provinceName, provinceCode string) {
+	var (
+		trimName  string
+		trimNames []string
+		prefixes  []string
+	)
+
+	trie.AddWordWithTypeAndID(provinceName, entity.LocationTypeProvince, provinceCode, HighWeight)
+	if strings.HasPrefix(provinceName, "thanh pho ") {
+		trimName = strings.TrimPrefix(provinceName, "thanh pho ")
+		prefixes = []string{"", "thanh pho ", "tp", "tp ", "tp.", "tp. ", "t.", "t. ", "t.p", "t.p "}
+
+	}
+
+	if strings.HasPrefix(provinceName, "tinh ") {
+		trimName = strings.TrimPrefix(provinceName, "tinh ")
+		prefixes = []string{"", "tinh ", "t", "t.", "t. "}
+	}
+
+	trimNames = trie.getProvinceAlias(trimName)
+
+	for _, tname := range trimNames {
+		for _, prefix := range prefixes {
+			if prefix != "" {
+				trie.AddWordWithTypeAndID(prefix+tname, entity.LocationTypeProvince, provinceCode, MediumWeight)
+			} else {
+				trie.AddWordWithTypeAndID(tname, entity.LocationTypeProvince, provinceCode, LowWeight)
+			}
+		}
+	}
+}
+
+func (trie *Trie) setCacheSkip(sentence string, skip int) {
+	skipMap[sentence] = skip
+}
+
+func (trie *Trie) getCacheSkip(sentence string) int {
+	return skipMap[sentence]
 }
 
 // searchPrefix tìm node chứa tiền tố
@@ -412,146 +424,4 @@ func (trie *Trie) dfs(node *Node, prefix string, words *[]string) {
 	for char, child := range node.Children {
 		trie.dfs(child, prefix+string(char), words)
 	}
-}
-
-// LevenshteinDistance tính khoảng cách Levenshtein giữa hai chuỗi
-func LevenshteinDistance(word1, word2 string) int {
-	len1 := len(word1)
-	len2 := len(word2)
-	dp := make([][]int, len1+1)
-	for i := range dp {
-		dp[i] = make([]int, len2+1)
-	}
-
-	for i := 0; i <= len1; i++ {
-		for j := 0; j <= len2; j++ {
-			if i == 0 {
-				dp[i][j] = j
-			} else if j == 0 {
-				dp[i][j] = i
-			} else if word1[i-1] == word2[j-1] {
-				dp[i][j] = dp[i-1][j-1]
-			} else {
-				dp[i][j] = 1 + int(math.Min(float64(dp[i-1][j]), math.Min(float64(dp[i][j-1]), float64(dp[i-1][j-1]))))
-			}
-		}
-	}
-	return dp[len1][len2]
-}
-
-// AutoCorrect thực hiện chức năng tự động sửa lỗi
-func AutoCorrect(trie *Trie, inputWord string, maxDistance int) []string {
-	suggestions := []string{}
-	words := trie.FindWordsWithPrefix("") // Tìm tất cả từ trong Trie
-	for _, word := range words {
-		distance := LevenshteinDistance(inputWord, word)
-		if distance <= maxDistance {
-			suggestions = append(suggestions, word)
-		}
-	}
-	return suggestions
-}
-
-func countWords(words []string) map[string]int {
-	result := make(map[string]int)
-	for _, word := range words {
-		result[word] = result[word] + 1
-	}
-
-	return result
-}
-func FilterLocation(locations []entity.Location, words []string) []entity.Location {
-	if len(locations) == 0 {
-		return nil
-	}
-
-	wordsCountMap := countWords(words)
-
-	result := []entity.Location{}
-	locationMap, wardIDs, districtIDs, provinceIDs := entity.Locations(locations).Simplify()
-
-	//filter ward
-	filterWardIDs := []string{}
-	filterWardLocations := []entity.Location{}
-	if len(wardIDs) == 1 {
-		filterWardLocations = append(filterWardLocations, locationMap[wardIDs[0]])
-	} else if len(wardIDs) > 0 { // if we have more than 1 ward, filter them
-		for _, id := range wardIDs {
-			ward := WardMap[id]
-			if slices.Contains(provinceIDs, ward.ProvinceCode) {
-				filterWardLocations = append(filterWardLocations, locationMap[id])
-				filterWardIDs = append(filterWardIDs, id)
-				sort.Sort(entity.Locations(filterWardLocations))
-			}
-		}
-
-		if len(filterWardIDs) == 0 {
-			filterWardLocations = append(filterWardLocations, locationMap[wardIDs[0]])
-		}
-	}
-
-	if len(filterWardLocations) > 0 {
-		// to be improve
-		for _, l := range filterWardLocations {
-			ward := WardMap[l.ID]
-			if locationMap[l.ID].Name == locationMap[ward.ProvinceCode].Name {
-				// remove ward if it's the same name with province
-				for i, v := range filterWardLocations {
-					if v.ID == l.ID {
-						filterWardLocations = append(filterWardLocations[:i], filterWardLocations[i+1:]...)
-						break
-					}
-				}
-			}
-		}
-
-		result = append(result, filterWardLocations[0])
-	}
-
-	//filter district
-	filterDistrictLocations := []entity.Location{}
-	if len(districtIDs) == 1 {
-		filterDistrictLocations = append(filterDistrictLocations, locationMap[districtIDs[0]])
-	} else if len(districtIDs) > 1 { // if we have more than 1 district, filter them
-		for _, id := range districtIDs {
-			district := DistrictMap[id]
-			if slices.Contains(provinceIDs, district.ProvinceCode) {
-				filterDistrictLocations = append(filterDistrictLocations, locationMap[id])
-			}
-		}
-
-		sort.Sort(entity.Locations(filterDistrictLocations))
-
-		if len(filterDistrictLocations) == 0 {
-			filterDistrictLocations = append(filterDistrictLocations, locationMap[districtIDs[0]])
-		}
-	}
-
-	var selectedLocation entity.Location
-	if len(filterDistrictLocations) >= 1 {
-		selectedLocation = filterDistrictLocations[0]
-	}
-
-	if len(filterDistrictLocations) > 1 {
-		// case: district with the same name with province
-		if len(provinceIDs) > 0 {
-			if locationMap[provinceIDs[0]].Name == filterDistrictLocations[0].Name && wordsCountMap[filterDistrictLocations[0].Name] <= 1 {
-				selectedLocation = filterDistrictLocations[1]
-			}
-		}
-	}
-
-	if len(filterDistrictLocations) > 0 {
-		result = append(result, selectedLocation)
-	}
-
-	//filter province
-
-	if len(provinceIDs) > 0 {
-		if len(provinceIDs) > 0 {
-			result = append(result, locationMap[provinceIDs[0]])
-		}
-	}
-
-	return result
 }

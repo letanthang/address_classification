@@ -5,19 +5,6 @@ import (
 	"strings"
 )
 
-// Function để loại bỏ dấu tiếng Việt
-func RemoveVietnameseAccents(input string) string {
-	var output strings.Builder
-	for _, char := range input {
-		if replacement, found := vietnameseTones[char]; found {
-			output.WriteRune(replacement)
-		} else {
-			output.WriteRune(char)
-		}
-	}
-	return output.String()
-}
-
 // Map ký tự có dấu sang không dấu
 var vietnameseTones = map[rune]rune{
 	'á': 'a', 'à': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a', 'ă': 'a', 'ắ': 'a', 'ằ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
@@ -38,6 +25,19 @@ var vietnameseTones = map[rune]rune{
 	'Ý': 'Y', 'Ỳ': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y', 'Ỵ': 'Y', 'đ': 'd', 'Đ': 'D',
 }
 var delimiters = []rune{',', '.', '-', '_', '+'}
+
+// Function để loại bỏ dấu tiếng Việt
+func RemoveVietnameseAccents(input string) string {
+	var output strings.Builder
+	for _, char := range input {
+		if replacement, found := vietnameseTones[char]; found {
+			output.WriteRune(replacement)
+		} else {
+			output.WriteRune(char)
+		}
+	}
+	return output.String()
+}
 
 func RemoveDelimeter(name string) string {
 	result := name
@@ -82,6 +82,13 @@ func RemoveProvincePrefix(name string) string {
 	}
 
 	return result
+}
+
+func StandardizeLocation(address string) string {
+	address = RemoveVietnameseAccents(address)
+	//address = RemoveDelimeter(address)
+	address = strings.ToLower(address)
+	return address
 }
 
 func IsInteger(str string) bool {
