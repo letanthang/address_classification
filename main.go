@@ -10,8 +10,14 @@ import (
 )
 
 func main() {
-	TestWithRealCases()
-	//TestSimple()
+	testMode := 2
+
+	switch testMode {
+	case 1:
+		TestSimple()
+	default:
+		TestWithRealCases()
+	}
 }
 
 func TestSimple() {
@@ -61,7 +67,9 @@ func TestWithRealCases() {
 	for i, c := range cases {
 		result := triehelper.ClassifyAddress(c.Input, trieTree, reversedTrie)
 		if result.Ward != c.Output.Ward || result.District != c.Output.District || result.Province != c.Output.Province {
-			logResult(result)
+			fmt.Println(parse.DebugFlag)
+			fmt.Println("words", parse.Words)
+			fmt.Println(entity.Locations(parse.OriginLocations).ToString())
 			fmt.Println(entity.Locations(parse.Locations).ToString())
 			return
 		} else {

@@ -34,6 +34,8 @@ func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.
 		return result
 	}
 
+	wordMap := map[string]struct{}{}
+
 	var extract func(sentence string)
 	extract = func(sentence string) {
 		if len(sentence) == 0 {
@@ -65,8 +67,10 @@ func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.
 				return
 			}
 
-			words = append(words, word)
-			locations = append(locations, node.Locations...)
+			if _, ok := wordMap[word]; !ok {
+				words = append(words, word)
+				locations = append(locations, node.Locations...)
+			}
 
 			offset = skip + len(word)
 
@@ -114,7 +118,9 @@ func DynamicParseWithLevenshtein(skipWords []string, trieDic *trie.Trie) entity.
 		if correctedWord != "" {
 			correctedWords = append(correctedWords, correctedWord)
 
-			sort.Sort(entity.Locations(node.Locations))
+			locations := make([]entity.Location, len(node.Locations))
+			copy(locations, node.Locations)
+			sort.Sort(entity.Locations(locations))
 			AddLocationToResult(&result, node.Locations[0])
 		}
 
