@@ -7,17 +7,29 @@ import (
 	"address_classification/trie/parse"
 	"fmt"
 	"log"
+	"strings"
 )
 
 func main() {
-	testMode := 2
+	testMode := 0
 
 	switch testMode {
 	case 1:
 		TestSimple()
-	default:
+	case 2:
 		TestWithRealCases()
+	default:
+		DebugTrie()
 	}
+}
+
+func DebugTrie() {
+	wards := triehelper.ImportWardDB("./assets/wards.csv")
+	trieDic := trie.NewTrie(false)
+	trieDic.BuildTrieWithWards(wards)
+	_, node := trieDic.ExtractWord("pho", 0)
+	fmt.Println(node)
+	fmt.Println(trie.WardMap[node.Locations[0].ID])
 }
 
 func TestSimple() {
@@ -31,18 +43,20 @@ func TestSimple() {
 	reversedTrie.BuildTrieWithWards(wards)
 
 	input := []string{
-		"TT Tân Bình Huyện Yên Sơn, Tuyên Quang",
+		"Khu phố 4 Thị trấn, Dương Minh Châu, Tây Ninh",
 	}
 
-	for i := 0; i < 1000000; i++ {
+	for i := 0; i < 100000; i++ {
 		address := input[0]
 		result := triehelper.ClassifyAddress(address, trieDic, reversedTrie)
 		if i == 0 {
-			logResult(result)
+			//logResult(result)
 		}
 
-		if result.Ward != "Tân Bình" {
+		if result.Ward == "Hồ" {
 			logResult(result)
+			logResult(parse.CorrectedResult)
+			fmt.Println("skip words", parse.SkipWords)
 			fmt.Println(parse.DebugFlag)
 			fmt.Println("words", parse.Words)
 			fmt.Println(entity.Locations(parse.OriginLocations).ToString())
@@ -67,8 +81,9 @@ func TestWithRealCases() {
 	for i, c := range cases {
 		result := triehelper.ClassifyAddress(c.Input, trieTree, reversedTrie)
 		if result.Ward != c.Output.Ward || result.District != c.Output.District || result.Province != c.Output.Province {
+			logResult(result)
 			fmt.Println(parse.DebugFlag)
-			fmt.Println("words", parse.Words)
+			logWords(parse.Words)
 			fmt.Println(entity.Locations(parse.OriginLocations).ToString())
 			fmt.Println(entity.Locations(parse.Locations).ToString())
 			return
@@ -80,4 +95,9 @@ func TestWithRealCases() {
 
 func logResult(result entity.Result) {
 	log.Printf("Result : Province %s, District %s, Ward %s\n", result.Province, result.District, result.Ward)
+}
+
+func logWords(words []string) {
+	text := strings.Join(words, "|")
+	fmt.Println("words: ", text)
 }

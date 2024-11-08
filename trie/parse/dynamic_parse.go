@@ -14,9 +14,10 @@ var (
 	DebugFlag       string
 	Words           []string
 	OriginLocations []entity.Location
+	SkipWords       []string
+	CorrectedResult entity.Result
 	Locations       []entity.Location
 	delimiters      = []rune{' ', ',', '-'}
-	dynamicStatus   = map[string]string{}
 )
 
 func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.Trie) entity.Result {
@@ -68,6 +69,7 @@ func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.
 			}
 
 			if _, ok := wordMap[word]; !ok {
+				wordMap[word] = struct{}{}
 				words = append(words, word)
 				locations = append(locations, node.Locations...)
 			}
@@ -91,17 +93,17 @@ func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.
 
 	Words = words
 	OriginLocations = locations
-	locations = trie.FilterLocation(locations, words)
+	locations = trie.FilterLocation(locations, words, originSentence)
 	Locations = locations
-	//fmt.Println(entity.Locations(locations).ToString())
+	SkipWords = skipWords
 
 	result = getLocationFromLocations(locations)
 	if result.IsComplete() {
 		return result
 	}
 
-	correctedResult := DynamicParseWithLevenshtein(skipWords, reversedTrie)
-	mergeResult(&correctedResult, &result)
+	CorrectedResult = DynamicParseWithLevenshtein(skipWords, reversedTrie)
+	mergeResult(&CorrectedResult, &result)
 
 	return result
 }
@@ -171,12 +173,4 @@ func printWords(words []string, wordType string) {
 
 	text := strings.Join(words, "|")
 	fmt.Println(wordType + ": " + text)
-}
-
-func getDynamicStatus(sentence string, offset int) string {
-	return dynamicStatus[sentence]
-}
-
-func setDynamicStatus(sentence string, offset int, word string) {
-	dynamicStatus[sentence] = word
 }
