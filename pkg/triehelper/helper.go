@@ -15,7 +15,29 @@ import (
 func ClassifyAddress(input string, trieDic *trie.Trie, reversedTrie *trie.Trie) entity.Result {
 	input = NormalizeInput(input)
 	result := parse.DynamicParse(input, trieDic, reversedTrie)
+	result = NormalizeOutput(result)
 	return result
+}
+
+func NormalizeOutput(result entity.Result) entity.Result {
+	out := entity.Result{}
+	if result.Province != "" {
+		out.Province = result.Province
+	}
+
+	if result.District != "" {
+		out.District = result.District
+	}
+
+	if result.Ward != "" {
+		if ward, ok := stringutil.NumberWardNormalizeMap[result.Ward]; ok {
+			out.Ward = ward
+		} else {
+			out.Ward = result.Ward
+		}
+	}
+
+	return out
 }
 
 func NormalizeInput(input string) string {

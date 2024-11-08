@@ -26,6 +26,37 @@ var vietnameseTones = map[rune]rune{
 }
 var delimiters = []rune{',', '.', '-', '_', '+'}
 
+var NumberWardNormalizeMap = map[string]string{
+	"01": "1",
+	"02": "2",
+	"03": "3",
+	"04": "4",
+	"05": "5",
+	"07": "7",
+	"08": "8",
+	"09": "9",
+}
+
+var NumberWardAliasMap = map[string]string{
+	"01": "1",
+	"02": "2",
+	"03": "3",
+	"04": "4",
+	"05": "5",
+	"07": "7",
+	"08": "8",
+	"09": "9",
+	"1":  "01",
+	"2":  "02",
+	"3":  "03",
+	"4":  "04",
+	"5":  "05",
+	"6":  "06",
+	"7":  "07",
+	"8":  "08",
+	"9":  "09",
+}
+
 // Function để loại bỏ dấu tiếng Việt
 func RemoveVietnameseAccents(input string) string {
 	var output strings.Builder

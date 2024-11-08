@@ -29,7 +29,6 @@ func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.
 
 	DebugFlag = "empty"
 	result := entity.Result{}
-	firstAttempt := true
 
 	if trieDic == nil || len(originSentence) == 0 {
 		return result
@@ -52,19 +51,28 @@ func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.
 			}
 			first++
 		}
-
 		sentence = sentence[first:]
+
+		// skip word not in trie
+		skip := trieDic.Skip(sentence)
+
+		if skip >= len(sentence) {
+			return
+		}
+
+		if skip > 0 {
+			skipWords = append(skipWords, sentence[:skip])
+		}
+
+		sentence = sentence[skip:]
+
 		//DebugFlag = DebugFlag + " " + sentence
 		for offset < len(sentence) {
 			i++
-			word, node, skip := trieDic.ExtractWordWithSkipping(sentence, offset)
-			if skip > 0 && firstAttempt {
-				skipWords = append(skipWords, sentence[0:skip-1])
-			}
+			word, node := trieDic.ExtractWord(sentence, offset)
+			offset = offset + len(word)
 
-			DebugFlag = fmt.Sprintf("%s - %d - %s - %d", DebugFlag, i, word, skip)
 			if word == "" {
-				firstAttempt = false
 				return
 			}
 
@@ -74,10 +82,9 @@ func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.
 				locations = append(locations, node.Locations...)
 			}
 
-			offset = skip + len(word)
+			offset = len(word)
 
 			if offset >= len(sentence) {
-				firstAttempt = false
 				return
 			}
 

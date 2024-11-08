@@ -6,6 +6,7 @@ import (
 	"cmp"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -112,9 +113,22 @@ func (trie *Trie) BuildTrieWithWards(wards []entity.Ward) {
 					trie.AddWordWithTypeAndID(name, entity.LocationTypeWard, ward.Code, LowWeight)
 				}
 			}
-			alias := []string{"p", "p ", "p.", "p. "}
-			for _, a := range alias {
-				trie.AddWordWithTypeAndID(a+name, entity.LocationTypeWard, ward.Code, MediumWeight)
+			aliases := []string{"p ", "p.", "p. "}
+			for _, alias := range aliases {
+				trie.AddWordWithTypeAndID(alias+name, entity.LocationTypeWard, ward.Code, MediumWeight)
+
+				if numAlias, ok := stringutil.NumberWardAliasMap[name]; ok {
+					trie.AddWordWithTypeAndID(alias+numAlias, entity.LocationTypeWard, ward.Code, MediumWeight)
+				}
+			}
+
+			alias := "p"
+			// case: number ward
+			if _, err := strconv.Atoi(name); err == nil {
+				trie.AddWordWithTypeAndID(alias+name, entity.LocationTypeWard, ward.Code, MediumWeight)
+				if numAlias, ok := stringutil.NumberWardAliasMap[name]; ok {
+					trie.AddWordWithTypeAndID(alias+numAlias, entity.LocationTypeWard, ward.Code, MediumWeight)
+				}
 			}
 		}
 
@@ -228,6 +242,27 @@ func (trie *Trie) ExtractWord(sentence string, offset int) (string, *Node) {
 	}
 
 	return sentence[:node.Height], node
+}
+
+func (trie *Trie) Skip(sentence string) int {
+	var (
+		result string
+		skip   int
+	)
+
+	for {
+		result, _ = trie.ExtractWord(sentence[skip:], 0)
+		if result != "" {
+			break
+		}
+
+		skip += 1
+		if skip >= len(sentence) {
+			break
+		}
+	}
+
+	return skip
 }
 
 func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, *Node, int) {
