@@ -32,11 +32,11 @@ func DebugTrie() {
 	//fmt.Println(node)
 	//fmt.Println(trie.WardMap[node.Locations[0].ID])
 
-	sentence := "Khu phố 3, Trảng Dài, Thành phố Biên Hòa, Đồng Nai."
+	sentence := "thị trấn Ba Hàng"
 
 	sentence = triehelper.NormalizeInput(sentence)
 
-	word, _, _ := trieDic.ExtractWordWithSkipping(sentence, 5)
+	word, _ := trieDic.ExtractWord(sentence, 0)
 	fmt.Println(word)
 }
 
@@ -51,22 +51,21 @@ func TestSimple() {
 	reversedTrie.BuildTrieWithWards(wards)
 
 	input := []string{
-		"Khu phố 3, Trảng Dài, Thành phố Biên Hòa, Đồng Nai.",
+		"Tiểu khu 3, thị trấn Ba Hàng, huyện Phổ Yên, tỉnh Thái Nguyên.",
 	}
 
 	for i := 0; i < 1; i++ {
 		address := input[0]
 		result := triehelper.ClassifyAddress(address, trieDic, reversedTrie)
-		if i == 0 {
-			logResult(result)
-		}
+		//if i == 0 {
+		//	logResult(result)
+		//}
 
 		if true {
 			logResult(result)
-			logResult(parse.CorrectedResult)
-			fmt.Println("skip words", parse.SkipWords)
-			fmt.Println(parse.DebugFlag)
-			fmt.Println("words", parse.Words)
+			printResult(parse.CorrectedResult)
+			logWords(parse.Words)
+			logWords(parse.SkipWords)
 			fmt.Println(entity.Locations(parse.OriginLocations).ToString())
 			fmt.Println(entity.Locations(parse.Locations).ToString())
 			break
@@ -104,6 +103,10 @@ func TestWithRealCases() {
 
 func logResult(result entity.Result) {
 	log.Printf("Result : Province %s, District %s, Ward %s\n", result.Province, result.District, result.Ward)
+}
+
+func printResult(result entity.Result) {
+	fmt.Printf("Result : Province %s, District %s, Ward %s\n", result.Province, result.District, result.Ward)
 }
 
 func logWords(words []string) {

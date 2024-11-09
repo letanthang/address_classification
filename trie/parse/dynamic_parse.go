@@ -2,6 +2,7 @@ package parse
 
 import (
 	"address_classification/entity"
+	"address_classification/pkg/stringutil"
 	"address_classification/trie"
 	"fmt"
 	"slices"
@@ -56,12 +57,12 @@ func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.
 		// skip word not in trie
 		skip := trieDic.Skip(sentence)
 
-		if skip >= len(sentence) {
-			return
-		}
-
 		if skip > 0 {
 			skipWords = append(skipWords, sentence[:skip])
+		}
+
+		if skip >= len(sentence) {
+			return
 		}
 
 		sentence = sentence[skip:]
@@ -123,6 +124,8 @@ func DynamicParseWithLevenshtein(skipWords []string, trieDic *trie.Trie) entity.
 
 	correctedWords := []string{}
 	for _, skipWord := range skipWords {
+		//normalize - remove delimiters
+		skipWord = stringutil.RemoveDelimeter(skipWord)
 		correctedWord, _, node := trieDic.ExtractWordWithAutoCorrect(skipWord)
 		if correctedWord != "" {
 			correctedWords = append(correctedWords, correctedWord)

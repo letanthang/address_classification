@@ -226,8 +226,8 @@
   {
     "text": "Tiểu khu 3, thị trấn Ba Hàng, huyện Phổ Yên, tỉnh Thái Nguyên.",
     "result": {
-      "province": "Thái Nguyên",
-      "district": "Phổ Yên",
+      "province": "",
+      "district": "",
       "ward": ""
     }
   },

@@ -265,28 +265,6 @@ func (trie *Trie) Skip(sentence string) int {
 	return skip
 }
 
-func (trie *Trie) ExtractWordWithSkipping(sentence string, offset int) (string, *Node, int) {
-	var (
-		result string
-		node   *Node
-		skip   int
-	)
-
-	for {
-		result, node = trie.ExtractWord(sentence[skip:], offset)
-		if result != "" {
-			break
-		}
-
-		skip += 1
-		if skip >= len(sentence) {
-			break
-		}
-	}
-
-	return result, node, skip
-}
-
 func (trie *Trie) ExtractWordWithAutoCorrect(word string) (string, WordDistance, *Node) {
 	if trie.reversed {
 		word = stringutil.Reverse(word)

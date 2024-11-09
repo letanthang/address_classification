@@ -117,22 +117,20 @@ func FilterLocation(locations []entity.Location, words []string, sentence string
 	}
 
 	if len(filterWardLocations) > 0 {
-		// to be improve
-		//for _, l := range filterWardLocations {
-		//	ward := WardMap[l.ID]
-		//	if locationMap[l.ID].Name == locationMap[ward.ProvinceCode].Name {
-		//		// remove ward if it's the same name with province
-		//		for i, v := range filterWardLocations {
-		//			if v.ID == l.ID {
-		//				filterWardLocations = append(filterWardLocations[:i], filterWardLocations[i+1:]...)
-		//				break
-		//			}
-		//		}
-		//	}
-		//}
 
-		result = append(result, filterWardLocations[0])
-		wordsCountMap[filterWardLocations[0].Name] = wordsCountMap[filterWardLocations[0].Name] - 1
+		if len(filterWardLocations) == 1 {
+			result = append(result, filterWardLocations[0])
+			wordsCountMap[filterWardLocations[0].Name] = wordsCountMap[filterWardLocations[0].Name] - 1
+		} else {
+			if filterWardLocations[0].Weight == filterWardLocations[1].Weight {
+				result = append(result, filterWardLocations[1])
+				wordsCountMap[filterWardLocations[1].Name] = wordsCountMap[filterWardLocations[1].Name] - 1
+			} else {
+				result = append(result, filterWardLocations[0])
+				wordsCountMap[filterWardLocations[0].Name] = wordsCountMap[filterWardLocations[0].Name] - 1
+			}
+		}
+
 	}
 
 	return result
