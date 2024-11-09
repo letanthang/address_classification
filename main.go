@@ -85,20 +85,24 @@ func TestWithRealCases() {
 
 	cases := triehelper.ImportTestCases("./assets/inputs.json")
 
+	failNum := 0
 	for i, c := range cases {
 		result := triehelper.ClassifyAddress(c.Input, trieTree, reversedTrie)
 		if result.Ward != c.Output.Ward || result.District != c.Output.District || result.Province != c.Output.Province {
-			logResult(result)
-			fmt.Println(parse.DebugFlag)
-			logWords(parse.Words)
-			logWords(parse.SkipWords)
-			fmt.Println(entity.Locations(parse.OriginLocations).ToString())
-			fmt.Println(entity.Locations(parse.Locations).ToString())
-			return
+			//logResult(result)
+			//fmt.Println(parse.DebugFlag)
+			//logWords(parse.Words)
+			//logWords(parse.SkipWords)
+			//fmt.Println(entity.Locations(parse.OriginLocations).ToString())
+			//fmt.Println(entity.Locations(parse.Locations).ToString())
+			//return
+			failNum++
 		} else {
 			fmt.Println(i, "Passed")
 		}
 	}
+
+	fmt.Println("Fail num: ", failNum, "/", len(cases))
 }
 
 func logResult(result entity.Result) {

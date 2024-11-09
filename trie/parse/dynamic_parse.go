@@ -47,7 +47,7 @@ func DynamicParse(originSentence string, trieDic *trie.Trie, reversedTrie *trie.
 		i := 0
 		// skip delimiters
 		for {
-			if !slices.Contains(delimiters, rune(sentence[first])) {
+			if first == len(sentence)-1 || !slices.Contains(delimiters, rune(sentence[first])) {
 				break
 			}
 			first++
@@ -142,15 +142,6 @@ func DynamicParseWithLevenshtein(skipWords []string, trieDic *trie.Trie) entity.
 
 }
 
-func getLocationFromLocations(locations []entity.Location) entity.Result {
-	result := entity.Result{}
-
-	for _, location := range locations {
-		AddLocationToResult(&result, location)
-	}
-	return result
-}
-
 func AddLocationToResult(r *entity.Result, location entity.Location) {
 	switch location.LocationType {
 	case entity.LocationTypeWard:
@@ -160,6 +151,15 @@ func AddLocationToResult(r *entity.Result, location entity.Location) {
 	case entity.LocationTypeProvince:
 		r.Province = trie.ProvinceMap[location.ID].NoPrefixName
 	}
+}
+
+func getLocationFromLocations(locations []entity.Location) entity.Result {
+	result := entity.Result{}
+
+	for _, location := range locations {
+		AddLocationToResult(&result, location)
+	}
+	return result
 }
 
 func mergeResult(source, destination *entity.Result) {
