@@ -406,14 +406,6 @@ func (trie *Trie) addProvinceWithPrefixAlias(provinceName, provinceCode string) 
 	}
 }
 
-func (trie *Trie) setCacheSkip(sentence string, skip int) {
-	skipMap[sentence] = skip
-}
-
-func (trie *Trie) getCacheSkip(sentence string) int {
-	return skipMap[sentence]
-}
-
 // searchPrefix tìm node chứa tiền tố
 func (trie *Trie) searchPrefix(prefix string) *Node {
 	node := trie.Root
